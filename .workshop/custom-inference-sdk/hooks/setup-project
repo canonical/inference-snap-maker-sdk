@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# Copy skills into user's .agents/skills directory
+SKILLS_DST="/home/workshop/.agents/skills"
+mkdir -p "$SKILLS_DST"
+
+for skill_dir in "$SDK/skills"/*/; do
+    skill_name=$(basename "$skill_dir")
+    if [[ ! -d "$SKILLS_DST/$skill_name" ]]; then
+        cp -r "$skill_dir" "$SKILLS_DST/$skill_name"
+    fi
+done

@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+# Install OpenCode CLI
+curl -fsSL https://opencode.ai/install | bash
+
+# Make skills accessible system-wide
+cat <<EOF >/etc/profile.d/inference-sdk.sh
+export INFERENCE_SKILLS_DIR="${SDK}/skills"
+EOF
