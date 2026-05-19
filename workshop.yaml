@@ -2,4 +2,4 @@ name: dev
 base: ubuntu@26.04
 sdks:
   - name: vscode-remote
-  - name: project-custom-inference-sdk
+  - name: try-custom-inference-sdk
