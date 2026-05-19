@@ -1,0 +1,23 @@
+name: custom-inference-sdk
+adopt-info: version
+title: Inference Snap Tooling SDK
+summary: Copilot skills for inference snap packaging plus OpenCode CLI.
+description: |
+  Provides four inference snap skills (structure, static checks, build/prompt
+  verification, and a compatibility dispatcher) and installs the OpenCode CLI.
+license: MIT
+
+build-base: ubuntu@26.04
+platforms:
+  amd64:
+
+parts:
+  version:
+    plugin: nil
+    override-pull: |
+      craftctl set version="1.0"
+  skills:
+    plugin: dump
+    source: skills/
+    organize:
+      "*": skills/
