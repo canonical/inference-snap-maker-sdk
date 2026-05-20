@@ -25,10 +25,9 @@ Use these specialized skills instead:
 4. If the user is vague, ask clarifying questions to determine which specialized skill to route to.
 5. Ask the user if he wants to proceed with all steps in sequence if the request is broad.
 
-## Primary References
+## Primary Reference
 
-- Main example: https://github.com/canonical/gemma4-snap
-- Sharding reference only, when model is larger than 5 GB: https://github.com/canonical/nemotron-3-nano-omni-snap
+- `/project/.claude/skills/inference-snap-structure/RULESET.md` — the authoritative structural ruleset. The original example repos are no longer consulted; everything needed to scaffold a new inference snap (both single-file and sharded variants) lives in RULESET.md.
 
 ## Rule
 
