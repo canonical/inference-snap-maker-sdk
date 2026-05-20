@@ -14,31 +14,25 @@ Execute end-to-end verification that the snap builds, installs, starts, and serv
 ## Required Workflow
 
 1. Build and pack:
-   - Run: snapcraft pack --destructive-mode
+   - Run: ./dev/build.sh
    - Confirm .snap and .comp artifacts are generated.
 2. Install artifacts:
-   - Run: sudo snap install *.snap *.comp --dangerous
+   - Run: ./dev/install.sh
    - Confirm command output indicates successful installation.
-3. Connect required interfaces:
-   - hardware-observe
-   - opengl
-   - network-bind
-   - process-control
-   - Any additional interfaces declared in snapcraft.yaml.
-4. Verify snap status:
+3. Verify snap status:
    - Run: <snap-name> status
    - Confirm that every service is active
    - Confirm that the listed endpoints match the expected port.
    - Confirm validity of the model name.
-5. Verify logs:
+4. Verify logs:
    - Run: sudo snap logs <snap-name> -n=100
    - Confirm no critical errors and that the server started successfully with the expected model.
-6. Prompt checks:
+5. Prompt checks:
    - GET /v1/models returns expected model alias.
    - POST /v1/chat/completions succeeds with a short prompt.
    - If the model has vision support, make a request with an image input and confirm expected response.
    - Capture response and latency/high-level runtime notes.
-7. Failure handling:
+6. Failure handling:
    - If any step fails, identify root cause, apply fix, rebuild/reinstall/retest.
 
 ## Output

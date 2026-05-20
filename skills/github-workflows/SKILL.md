@@ -26,17 +26,11 @@ on:
 
 jobs:
   remove-build-label:
-    permissions:
-      contents: read
-      pull-requests: write
     uses: canonical/inference-snaps-dev/.github/workflows/remove-label.yaml@v2
     with:
       label: ${{ vars.PR_BUILD_TRIGGER_LABEL }}
 
   remove-test-label:
-    permissions:
-      contents: read
-      pull-requests: write
     uses: canonical/inference-snaps-dev/.github/workflows/remove-label.yaml@v2
     with:
       label: ${{ vars.PR_TEST_TRIGGER_LABEL }}
@@ -217,7 +211,6 @@ jobs:
         with:
           repository: canonical/inference-snaps-cli
           path: inference-snaps-cli
-          ref: v1.0.0
 
       - name: Set up Go
         uses: actions/setup-go@v6

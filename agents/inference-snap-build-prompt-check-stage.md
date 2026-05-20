@@ -16,7 +16,7 @@ Your invoking prompt contains:
 ## Workflow
 
 1. **Build and pack**
-   - Run: `snapcraft pack --destructive-mode` from `workspace_path`.
+   - Run: `snapcraft pack -v` from `workspace_path`.
    - Confirm `.snap` and `.comp` artifacts are generated.
 
 2. **Install artifacts**
