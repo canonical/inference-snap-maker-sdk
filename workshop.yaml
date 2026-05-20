@@ -1,5 +1,0 @@
-name: dev
-base: ubuntu@26.04
-sdks:
-  - name: vscode-remote
-  - name: try-custom-inference-sdk
