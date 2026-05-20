@@ -21,3 +21,8 @@ parts:
     source: skills/
     organize:
       "*": skills/
+  agents:
+    plugin: dump
+    source: agents/
+    organize:
+      "*": agents/

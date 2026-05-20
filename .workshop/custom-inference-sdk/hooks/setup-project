@@ -12,10 +12,10 @@ for skill_dir in "$SDK/skills"/*/; do
     fi
 done
 
-for agent_dir in "$SDK/agents"/*/; do
-    agent_name=$(basename "$agent_dir")
-    if [[ ! -d "$AGENTS_DIR/$agent_name" ]]; then
-        cp -r "$agent_dir" "$AGENTS_DIR/$agent_name"
+for agent in "$SDK/agents"/*; do
+    agent_name=$(basename "$agent")
+    if [[ ! -e "$AGENTS_DIR/$agent_name" ]]; then
+        cp -r "$agent" "$AGENTS_DIR/$agent_name"
     fi
 done
 
