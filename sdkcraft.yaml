@@ -1,4 +1,4 @@
-name: custom-inference-sdk
+name: inference-snaps-sdk
 adopt-info: version
 title: Inference Snap Tooling SDK
 summary: Copilot skills for inference snap packaging plus OpenCode CLI.
