@@ -1,146 +1,218 @@
-# Inference Snaps SDK for Workshop
+<!--
+# SDK README Template for Workshop
 
-This SDK provides inference snap authoring and validation skills for Workshop environments, together with the OpenCode CLI. It includes specialized skills for snap structure scaffolding, static validation, build and prompt verification, GitHub workflow generation, and pull request creation. It also includes a pipeline skill that orchestrates these stages in sequence.
+OVERALL DESIGN (for sdkcraft.yaml description field):
+
+The sdkcraft.yaml `description` field should match the README overview
+paragraph so it can be reused in `sdk info` output. Write it as a short YAML
+multiline string — no sub-headings, no bullet lists. Follow this pattern:
+
+description: |
+  This SDK provides [toolchain/runtime] for [purpose].
+  [Key resources] are persisted on the host to speed up [builds/installs]
+  across workshop updates.
+
+Examples from approved SDKs:
+
+  # go
+  description: |
+    This SDK provides the official Go toolchain for efficient Go
+    development. Module downloads are persisted on the host to speed up builds
+    across workshop updates, and Go environment settings are preserved between
+    workshop updates.
+
+  # node
+  description: |
+    This SDK provides a complete Node.js development environment built from
+    source, with Corepack enabled for flexible package manager choice. Package
+    manager caches are persisted on the host to speed up dependency
+    installations across workshop updates.
+
+README TEMPLATE INSTRUCTIONS:
+
+1. Copy this file to your SDK repository directory as README.md
+2. Replace all placeholders in [SQUARE BRACKETS] with your actual content;
+   replace XYZ, FOO, BAR with real product names
+3. Remove any sections that don't apply to your SDK for simplicity
+4. Delete this comment block before publishing
+5. Test all command examples before publishing
+
+Focus on the SDK's behavior, not the target library/framework documentation.
+Link to upstream docs for product-related specifics.
+
+Do NOT include "Installed components" or "Platforms, channels, versions"
+sections. Component details should be folded into the overview paragraph.
+Channel information belongs in `sdk info`, not the README.
+
+SECTION GUIDE:
+
+Title and description:
+Use the format "[Software Name] SDK for Workshop". Answer: What is it?
+What does it do? Who is it for? Keep it 2-3 compound sentences long.
+Focus on how the SDK affects the user's environment, not on marketing
+language. Avoid phrases like "focus on writing and testing code".
+
+Reference workshop:
+Provide an inline minimal workshop.yaml.
+Explain briefly what the reference demonstrates.
+
+Using the SDK:
+Step-by-step: prerequisite SDKs, project layout, launch, primary workflow.
+All commands must be tested and working. Keep code examples clear about
+whether they run on the host or inside the workshop.
+
+Plugs and slots:
+Document each plug: interface, target/source, purpose.
+Include mounts and persistence details here, and document any tunnels
+alongside other plug types.
+If the SDK relies on resources exposed by other SDKs, say this explicitly.
+Do the same for slots if SDK exposes resources to others.
+Use "workshop updates" (not "restarts" or "sessions") when describing
+what mounts survive.
+
+Documentation and guidance:
+Link to upstream docs.
+
+Community and support:
+Link to forums, support channels, Code of Conduct.
+
+Contributions:
+Link to contribution guides, CONTRIBUTING.md.
+
+License and copyright:
+Include copyright holder, year, license name and link.
+Make sure to include all shipped components.
+-->
+
+# [Software Name] SDK for Workshop
+
+[Brief description of what this SDK provides. Should closely match the
+sdkcraft.yaml description. Focus on how the SDK affects the development
+environment: what toolchain/runtime it provides, what it persists on the host,
+and any notable features. Example: "A development environment for Go projects.
+It provides the official Go toolchain, manages module caches via persistent
+mounts, and preserves Go environment settings across workshop updates."]
+
+---
+
+## Reference workshop
+
+A minimal workshop:
+
+```yaml
+# workshop.yaml
+name: [workshop-name]
+base: ubuntu@[version]  # e.g., ubuntu@24.04
+sdks:
+  - name: [sdk-name]
+    channel: [channel]  # e.g., 1.24/stable
+
+actions:
+  [action-name]: |
+    [command]
+```
+
+[One sentence explaining what this demonstrates, e.g., "This demonstrates a
+basic Go build workflow with persistent module caching."]
+
+---
 
 ## Using the SDK
 
-### 1. Reference workshop
+### Prerequisites, project layout
 
-```yaml
-# workshop.yaml
-name: inference-snap-dev
-base: ubuntu@24.04
-sdks:
-  # Useful for testing the SDK in isolation, but not required to run the skills
-  - name: vscode-remote
-  - name: opencode
-    channel: latest/stable
-    # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
-  - name: try-inference-snaps-sdk
+1. [List prerequisites, e.g., "This relies on the `uv` SDK for venv."]
+2. [Suggest expected project directory structure, including source code layout
+   and setup steps needed:]
 
-actions:
-  opencode: opencode "$@"
-```
+   ```bash
+   [command to clone or prepare sources]
+   ```
 
-This reference configuration shows that the SDK installs its skills into the workshop user profile and makes the `opencode` command available.
+3. [Describe what side effects may happen during launch and refresh.]
 
-### 2. Start a workshop with this SDK
+### [Primary workflow task, e.g., "Build the project"]
+
+Once the workshop is ready:
 
 ```bash
-workshop launch
+[workshop run]
+[commands to perform the primary task]
 ```
 
-Open a shell in the workshop environment:
+[Explain where outputs go and how they persist across workshop updates.]
+
+### [Secondary workflow task, e.g., "Test and run"]
+
+From within the workshop shell:
 
 ```bash
 workshop shell
+[test or run commands]
 ```
 
-### 3. Prepare the workshop environment
-After entering the workshop, run:
+[Brief explanation of what this achieves.]
 
-```bash
-sudo snap install snapcraft --classic
-```
+---
 
-This enables snap builds with the `snapcraft` command.
+## Plugs (resources this SDK consumes)
 
-To create a pull request at the end of the workflow, configure GitHub credentials in the workshop environment:
+### `[plug-name]`
 
-```bash
-sudo snap install gh --classic
-gh auth login --scopes repo,workflow
-```
+- Interface: `mount`
+- Workshop target: `[/path/inside/workshop]`
+- Purpose: [What this persists between workshop updates.]
 
-### 4. Run the inference-snap flow
+### `[plug-name]`
 
-The SDK includes these skills:
+- Interface: `gpu`
+- Purpose: Grants access to [AMD/NVIDIA] GPU hardware on the host.
 
-- `inference-snap-structure`
-- `github-workflows`
-- `inference-snap-static-checks`
-- `inference-snap-build-and-prompt-check`
-- `inference-snap-create-pr`
-- `inference-snap-pipeline`
+-- OR --
 
-To create a snap, run the pipeline skill, which orchestrates the full workflow. Open the OpenCode TUI inside the workshop environment with:
+This SDK doesn't define any plugs.
 
-```bash
-opencode
-```
+## Slots (resources this SDK provides)
 
-In the OpenCode TUI, run:
+### `[slot-name]`
 
-```
-apply inference-snaps-sdk/agent-instructions.md
-```
+- Interface: `mount`
+- Workshop source: `[/path/inside/workshop]`
+- Purpose: [What resource this exposes to other SDKs]
 
-The agent requests the required inputs, executes the full workflow, and provides a final report with results and a pull request for the specified GitHub repository URL.
+-- OR --
 
-### 5. Connect OpenCode to an inference snap
+This SDK doesn't define any slots.
 
-OpenCode can be configured to connect directly to an inference snap API.
+---
 
-Create an `opencode.json` file with the following content:
+## Documentation and guidance
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "model": "<MODELNAME>",
-  "provider": {
-    "inference-snap": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Local Inference Snap",
-      "options": {
-        "baseURL": "http://localhost:<PORT>/v1",
-        "apiKey": "dummy"
-      },
-      "models": {
-        "<MODELNAME>": {
-          "name": "<MODELNAME> (local snap)"
-        }
-      }
-    }
-  }
-}
-```
+- [[XYZ] official documentation]([upstream-docs-url])
+- [[XYZ] best practices]([public-website-url])
 
-The workshop must expose the snap's API port through the `opencode` plug and the `system` slot. If you are adapting this setup for another workshop, keep the API port consistent in both places:
+---
 
-```yaml
-# workshop.yaml
-name: inference-snap-dev
-base: ubuntu@24.04
-sdks:
-  # Useful for testing the SDK in isolation, but not required to run the skills
-  - name: vscode-remote
-  # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
-  - name: opencode
-    channel: latest/stable
-    plugs:
-      api:
-        interface: tunnel
-        endpoint: localhost:<PORT>
-  - name: try-inference-snaps-sdk
-  - name: system
-    slots:
-      api:
-        interface: tunnel
-        endpoint: localhost:<PORT>
+## Community and support
 
-actions:
-  opencode: opencode "$@"
-```
+- [XYZ] community forum: [Link to upstream forum/community]
+- Please review our [Code of Conduct](https://ubuntu.com/community/ethos/code-of-conduct)
+  before participating.
 
-Connect the workshop plug to the slot:
+---
 
-```bash
-workshop connect dev/opencode:api dev/system:api
-```
+## Contributions
 
-The `opencode` CLI can now send requests directly to the inference snap API.
-In the OpenCode TUI, run `/connect`, then select `Local Inference Snap` in the wizard. If prompted, use a dummy API key and select the desired model.
+All contributions, including code, documentation updates, and issue reports,
+are welcome!
+
+- See [CONTRIBUTING]([public-github-url]) for guidelines.
+- Open issues or pull requests on the [official repository]([repo-url]).
+
+---
 
 ## License and copyright
 
-TODO
+Copyright [START YEAR] [COPYRIGHT HOLDER].
+
+[Include any required claims, information, and disclaimers for your license.]
