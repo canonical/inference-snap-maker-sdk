@@ -1,11 +1,9 @@
 name: inference-snaps-sdk
 adopt-info: version
 title: Inference Snap Tooling SDK
-summary: Copilot skills for inference snap packaging plus OpenCode CLI.
+summary: LLM skills for inference snap packaging plus OpenCode CLI.
 description: |
-  Provides four inference snap skills (structure, static checks, build/prompt
-  verification, and a compatibility dispatcher) and installs the OpenCode CLI.
-license: MIT
+  Provides skills to be used by an LLM to package inference snaps and install the OpenCode CLI.
 
 build-base: ubuntu@26.04
 platforms:
