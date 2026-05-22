@@ -36,7 +36,7 @@ Keep hook/server/webui ports aligned with requested values.
 Execution requirements:
 
 Run full static checks and fix blocking issues before build.
-Run snapcraft pack -v.
+Run snapcraft pack --destructive-mode.
 Install with: sudo snap install *.snap *.comp --dangerous
 Connect required interfaces (hardware-observe, opengl, network-bind).
 Run hardware + engine checks, then auto-select engine; if needed set the expected engine explicitly.
