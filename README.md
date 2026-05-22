@@ -7,7 +7,7 @@ This SDK provides inference-snap authoring and validation skills for Workshop us
 ```yaml
 # workshop.yaml
 name: inference-snap-dev
-base: ubuntu@26.04
+base: ubuntu@24.04
 sdks:
   # Useful for testing the SDK in isolation, but not required to run the skills
   - name: vscode-remote
@@ -32,6 +32,20 @@ This reference shows that the SDK installs its skills into the workshop user pro
 
 ```bash
 workshop launch
+```
+
+### 2. Prepare Workshop environment
+Once inside the workshop, run:
+
+```bash
+sudo snap install snapcraft --classic
+```
+This will allow you to build snaps with the `snapcraft` command.
+Finally, in order to open the PR at the end of the flow, you need to have git credentials configured in the workshop environment. You can set them with:
+
+```bash
+sudo snap install gh --classic
+gh auth login --scopes repo,workflow
 ```
 
 ### 3. Run the inference-snap flow
