@@ -1,11 +1,12 @@
 # Agent Instructions for Inference Snap Creation
 ## Purpose
-These instructions guide the agent when it needs to analyze one or more example repositories and build a new inference snap from those structures.
+These instructions guide the agent when it needs to create and validate a production-ready inference snap using only local workspace skills, agents, and rulesets.
 ## Principles
-Always start from the available examples and derive the real project structure.
-Use all four skills in order, back-to-back without stopping between steps:
+Do not consult external repositories.
+Use the unified five-stage workflow in order, back-to-back without stopping between steps:
 
 inference-snap-structure
+github-workflows
 inference-snap-static-checks
 inference-snap-build-and-prompt-check
 inference-snap-create-pr
@@ -16,6 +17,7 @@ Create a production-ready inference snap.
 
 Inputs:
 
+Download model URL: <MODEL_DOWNLOAD_URL>
 Target workspace path: <PATH> (must be a subdirectory, never the root of this project)
 API port: <API_PORT>
 WebUI port: <WEBUI_PORT>
@@ -24,14 +26,16 @@ Snap name: <SNAP_NAME>
 GitHub repository URL: <GITHUB_REPO_URL>
 Hard requirements:
 
-Preserve example structure and make minimal targeted changes.
+Use installed local rulesets/skills/agents from `/home/workshop/.agents` as the only source of truth.
+Preserve structure and make minimal targeted changes.
 Ask for confirmation before introducing new dependencies or architecture changes.
-If model size > 5 GB, apply sharding logic following the example in canonical/nemotron-3-nano-omni-snap only for sharding.
+If model size > 5 GB, apply sharding logic according to the local RULESET only for sharding-related parts.
 Do not leave empty or placeholder components.
 Verify model provenance/signature from source metadata (filename, linked size, etag/hash/checksum if available).
 Ensure snapcraft consistency: apps/commands/hooks/components/engines all resolve correctly.
 Enforce release metadata in snapcraft.yaml: title, summary, description, license, contact, website, source-code, issues.
 Keep hook/server/webui ports aligned with requested values.
+Always ask the user for both URLs (`<MODEL_DOWNLOAD_URL>` and `<GITHUB_REPO_URL>`) before running the pipeline; do not infer or reuse automatically.
 Execution requirements:
 
 Run full static checks and fix blocking issues before build.

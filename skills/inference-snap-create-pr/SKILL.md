@@ -15,7 +15,7 @@ Push the current branch to a remote repository and open a pull request with the 
 
 Before doing anything, collect from the user:
 
-- **Remote repo URL** — the GitHub repository URL to push to and create the PR against (e.g. `https://github.com/org/repo`). Ask if not provided.
+- **Remote repo URL** — the GitHub repository URL to push to and create the PR against (e.g. `https://github.com/org/repo`). Always ask and require explicit confirmation in the current run; do not infer from existing remotes.
 - **PR base branch** — defaults to `main` if not provided.
 - **PR title** — defaults to the most recent commit subject if not provided.
 - **PR body** — optional; may be left blank.

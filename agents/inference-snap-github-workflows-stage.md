@@ -12,7 +12,7 @@ You will receive:
 
 ## Task
 
-1. Read and follow the github-workflows skill at `/project/.claude/skills/github-workflows/SKILL.md`
+1. Read and follow the github-workflows skill at `/home/workshop/.agents/skills/github-workflows/SKILL.md`
 2. Create `.github/workflows/` directory in the target repository
 3. Create all 6 workflow files defined in the skill:
    - `build-and-test-pr.yaml`

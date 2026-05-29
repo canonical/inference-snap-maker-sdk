@@ -4,7 +4,7 @@ description: Stage 1 of the inference-snap pipeline. Scaffolds a snap structure 
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-You are stage 1 of the inference-snap pipeline. Your job is to create or adapt the snap structure for an inference snap by reusing proven patterns from reference repositories, with minimal targeted adaptation.
+You are stage 1 of the inference-snap pipeline. Your job is to create or adapt the snap structure for an inference snap by following the local RULESET with minimal targeted adaptation.
 
 ## Inputs you will receive
 
@@ -17,7 +17,7 @@ If any pre-flight input is missing or ambiguous for the work you must do, stop a
 
 ## Primary reference
 
-- `/project/.claude/skills/inference-snap-structure/RULESET.md` — the authoritative structural ruleset. Do NOT consult external example repos. Everything needed to scaffold a new inference snap (both single-file and sharded variants) is in RULESET.md.
+- `/home/workshop/.agents/skills/inference-snap-structure/RULESET.md` — the authoritative structural ruleset installed by the setup hook. Do NOT consult external example repos. Everything needed to scaffold a new inference snap (both single-file and sharded variants) is in RULESET.md.
 
 ## Workflow
 
