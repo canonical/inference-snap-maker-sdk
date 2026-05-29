@@ -12,8 +12,7 @@ inference-snap-create-pr
 
 Do NOT pause between skills to wait for user confirmation. Run each skill immediately after the previous one completes, passing findings forward. Only stop if a blocking issue requires user input (e.g. missing required inputs, unresolvable build error).
 Goal:
-Create a production-ready inference snap from canonical/gemma4-snap for this model:
-https://huggingface.co/<MODEL_OWNER>/<MODEL_NAME>
+Create a production-ready inference snap.
 
 Inputs:
 
@@ -27,7 +26,7 @@ Hard requirements:
 
 Preserve example structure and make minimal targeted changes.
 Ask for confirmation before introducing new dependencies or architecture changes.
-If model size > 5 GB, apply sharding logic using canonical/nemotron-3-nano-omni-snap only for sharding.
+If model size > 5 GB, apply sharding logic following the example in canonical/nemotron-3-nano-omni-snap only for sharding.
 Do not leave empty or placeholder components.
 Verify model provenance/signature from source metadata (filename, linked size, etag/hash/checksum if available).
 Ensure snapcraft consistency: apps/commands/hooks/components/engines all resolve correctly.
@@ -38,7 +37,7 @@ Execution requirements:
 Run full static checks and fix blocking issues before build.
 Run snapcraft pack --destructive-mode.
 Install with: sudo snap install *.snap *.comp --dangerous
-Connect required interfaces (hardware-observe, opengl, network-bind).
+Connect required interfaces (hardware-observe, opengl, network-bind, process-control).
 Run hardware + engine checks, then auto-select engine; if needed set the expected engine explicitly.
 Validate runtime with:
 GET /v1/models
@@ -60,7 +59,7 @@ Report exact blocking command and error, propose the smallest viable next action
 When invoked make sure to ask for all required inputs before proceeding.
 If not provided ask for:
 
-Huggingface model URL (must include owner and model name)
+Download model URL
 target workspace path (must be a subdirectory of this project, never the root)
 API port
 WebUI port
