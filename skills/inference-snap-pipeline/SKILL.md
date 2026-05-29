@@ -1,6 +1,6 @@
 ---
 name: inference-snap-pipeline
-description: Run the full inference-snap workflow as a sequential chain of subagents — structure → github workflows → static checks → build & prompt check — passing each stage's report as input to the next.
+description: Run the full inference-snap workflow as a sequential chain of subagents — structure → github workflows → static checks → build & prompt check → create PR — passing each stage's report as input to the next.
 trigger: Keywords like "run the full inference snap pipeline", "chain inference snap skills", "run all inference-snap skills", "run each inference-snap skill in a subagent", "end-to-end inference snap"
 scope: user
 ---
@@ -15,10 +15,10 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 
 ## Stages (run sequentially — never in parallel)
 
-1. **Structure** — follow `/project/.claude/skills/inference-snap-structure/SKILL.md`
-2. **GitHub workflows** — follow `/project/.claude/skills/github-workflows/SKILL.md`
-3. **Static checks** — follow `/project/.claude/skills/inference-snap-static-checks/SKILL.md`
-4. **Build & prompt check** — follow `/project/.claude/skills/inference-snap-build-and-prompt-check/SKILL.md`
+1. **Structure** — follow `/home/workshop/.agents/skills/inference-snap-structure/SKILL.md`
+2. **GitHub workflows** — follow `/home/workshop/.agents/skills/github-workflows/SKILL.md`
+3. **Static checks** — follow `/home/workshop/.agents/skills/inference-snap-static-checks/SKILL.md`
+4. **Build & prompt check** — follow `/home/workshop/.agents/skills/inference-snap-build-and-prompt-check/SKILL.md`
 5. **Create PR** — `subagent_type: inference-snap-create-pr-stage`
 
 ## Pre-flight (before launching stage 1)
@@ -30,17 +30,19 @@ Collect from the user, then reuse across all stages:
 - Snap name.
 - Ports/hosts for hooks.
 - Model identity + whether it is > 5 GB (drives sharding decision).
-- Remote repo URL (GitHub repository URL for the final PR, e.g. `https://github.com/org/repo`).
+- Model download URL.
+- Remote repo URL (GitHub repository URL for the final PR, e.g. `https://github.com/org/repo`) explicitly confirmed by the user in the current run. Do not infer from existing git remotes.
 
 If any of these are missing, ask before starting the chain.
 
 ## Orchestration rules
 
 - Use the `Agent` tool with dedicated `subagent_type` values for each stage. Do NOT use `general-purpose`:
-  - Stage 1: `inference-snap-structure-stage` (agent file: `/project/.claude/agents/inference-snap-structure-stage.md`)
-  - Stage 2: `inference-snap-github-workflows-stage` (agent file: `/project/.claude/agents/inference-snap-github-workflows-stage.md`)
-  - Stage 3: `inference-snap-static-checks-stage` (agent file: `/project/.claude/agents/inference-snap-static-checks-stage.md`)
-  - Stage 4: `inference-snap-build-prompt-check-stage` (agent file: `/project/.claude/agents/inference-snap-build-prompt-check-stage.md`)
+  - Stage 1: `inference-snap-structure-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-structure-stage.md`)
+  - Stage 2: `inference-snap-github-workflows-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-github-workflows-stage.md`)
+  - Stage 3: `inference-snap-static-checks-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-static-checks-stage.md`)
+  - Stage 4: `inference-snap-build-prompt-check-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-build-prompt-check-stage.md`)
+  - Stage 5: `inference-snap-create-pr-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-create-pr-stage.md`)
 - Launch stages one at a time. Wait for stage N to return before launching stage N+1.
 - Each subagent prompt MUST be self-contained — the subagent has no view of this conversation. Always include:
   1. The user's original request (verbatim).
@@ -61,6 +63,7 @@ Pre-flight inputs:
   snap_name: {...}
   ports_hosts: {...}
   model_id: {...}
+  model_download_url: {...}
   model_over_5gb: {...}
   remote_repo_url: {...}
 
@@ -70,15 +73,15 @@ Previous stage report:
 
 ## Abort conditions
 
-- Stage 2 reports any blocking issue → STOP. Surface the fix list and ask the user whether to fix and rerun stage 2, or abort.
-- Stage 3 reports a failed prompt/API check or build failure → STOP. Surface the failing step + command output verbatim.
-- Stage 4 reports a push failure, PR creation failure, or missing `trigger-tests` label → STOP. Surface the exact error and PR URL if partially created.
+- Stage 3 reports any blocking issue → STOP. Surface the fix list and ask the user whether to fix and rerun stage 3, or abort.
+- Stage 4 reports a failed prompt/API check or build failure → STOP. Surface the failing step + command output verbatim.
+- Stage 5 reports a push failure, PR creation failure, or missing `trigger-tests` label → STOP. Surface the exact error and PR URL if partially created.
 - Subagent returns without a `pipeline-report` block → STOP and ask the user how to proceed; do not fabricate the missing report.
 
 ## Final output to user
 
 - One-line status per stage (pass / blocked / failed).
-- The verbatim stage-4 report (includes PR URL and label confirmation).
+- The verbatim stage-5 report (includes PR URL and label confirmation).
 - Remaining risks and follow-ups aggregated across stages.
 
 ## Rules
@@ -86,4 +89,4 @@ Previous stage report:
 - Do NOT skip stages, even if the user seems to imply only the last is needed — earlier stages produce the inputs the later ones rely on.
 - Do NOT run stages in parallel.
 - Do NOT invoke `inference-snap-from-example` as part of the chain.
-- Do NOT declare the pipeline successful unless stage 3 reports a real prompt/API response AND stage 4 confirms the PR with the `trigger-tests` label.
+- Do NOT declare the pipeline successful unless stage 4 reports a real prompt/API response AND stage 5 confirms the PR with the `trigger-tests` label.

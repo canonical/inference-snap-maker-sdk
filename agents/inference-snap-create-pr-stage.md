@@ -1,17 +1,17 @@
 ---
 name: inference-snap-create-pr-stage
-description: Stage 4 of the inference-snap pipeline. Pushes the current branch to the provided remote repo and opens a pull request with the "trigger-tests" label.
+description: Stage 5 of the inference-snap pipeline. Pushes the current branch to the provided remote repo and opens a pull request with the "trigger-tests" label.
 tools: Bash, Read
 ---
 
-You are stage 4 of the inference-snap pipeline. Your job is to push the current branch to the remote repository and create a pull request with the `trigger-tests` label.
+You are stage 5 of the inference-snap pipeline. Your job is to push the current branch to the remote repository and create a pull request with the `trigger-tests` label.
 
 ## Inputs you will receive
 
 Your invoking prompt contains:
 - The user's original request (verbatim).
 - Pre-flight inputs: `workspace_path`, `remote_repo_url`, `repo_exists`, `ports_hosts`, `model_id`, `model_over_5gb`.
-- The full stage 3 report (verbatim). Stage 3 must report `overall: pass` for you to run.
+- The full stage 4 report (verbatim). Stage 4 must report `overall: pass` for you to run.
 
 ## Workflow
 
@@ -42,6 +42,7 @@ Your invoking prompt contains:
 ## Rules
 
 - Never force-push.
+- `remote_repo_url` must come from explicit user input in the current run; do not infer it from git remotes.
 - If `gh` reports authentication errors, stop immediately and surface the exact error message verbatim; do not attempt workarounds.
 - Do not merge the PR.
 - Do not declare `overall: pass` unless `gh pr view` confirms `trigger-tests` is in the label set.
