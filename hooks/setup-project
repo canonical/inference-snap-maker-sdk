@@ -18,14 +18,3 @@ for agent in "$SDK/agents"/*; do
         cp -r "$agent" "$AGENTS_DIR/$agent_name"
     fi
 done
-
-# Install OpenCode CLI for the workshop user
-if ! command -v opencode >/dev/null 2>&1; then
-    curl -fsSL https://opencode.ai/install | bash
-fi
-
-# Ensure opencode PATH is in .profile for login shells
-OPENCODE_BIN="$HOME/.opencode/bin"
-if [[ -d "$OPENCODE_BIN" ]] && ! grep -q ".opencode/bin" "$HOME/.profile" 2>/dev/null; then
-    echo "export PATH=\"$OPENCODE_BIN:\$PATH\"" >> "$HOME/.profile"
-fi
