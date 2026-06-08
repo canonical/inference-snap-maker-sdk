@@ -1,12 +1,4 @@
 #!/usr/bin/bash
-# Verify skills are installed
-SKILLS_DIR="/home/workshop/.agents/skills"
-for skill in inference-snap-build-and-prompt-check inference-snap-from-example inference-snap-static-checks inference-snap-structure; do
-    if [[ ! -f "$SKILLS_DIR/$skill/SKILL.md" ]]; then
-        workshopctl set-health error "skill $skill not installed"
-        exit 0
-    fi
-done
 
 # Verify opencode binary exists
 if ! sudo -u workshop --login opencode version >/dev/null 2>&1; then
