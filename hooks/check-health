@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+
+# Verify opencode binary exists
+if ! sudo -u workshop --login opencode version >/dev/null 2>&1; then
+    # Try common install locations
+    if [[ ! -x /home/workshop/.opencode/bin/opencode ]]; then
+        workshopctl set-health error "opencode not installed"
+        exit 0
+    fi
+fi
+workshopctl set-health okay
