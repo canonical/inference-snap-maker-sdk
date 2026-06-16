@@ -114,13 +114,13 @@ base: ubuntu@24.04
 sdks:
   # Useful for testing the SDK in isolation, but not required to run the skills
   - name: vscode-remote
-  # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
   - name: opencode
     channel: latest/stable
     plugs:
       api:
         interface: tunnel
         endpoint: localhost:<PORT>
+  # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
   - name: try-inference-snaps-sdk
   - name: system
     slots:
