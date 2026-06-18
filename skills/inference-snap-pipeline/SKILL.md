@@ -18,7 +18,7 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 1. **Structure** — follow `/home/workshop/.agents/skills/inference-snap-structure/SKILL.md`
 2. **GitHub workflows** — follow `/home/workshop/.agents/skills/github-workflows/SKILL.md`
 3. **Static checks** — follow `/home/workshop/.agents/skills/inference-snap-static-checks/SKILL.md`
-4. **Build & prompt check** — follow `/home/workshop/.agents/skills/inference-snap-build-and-prompt-check/SKILL.md`
+4. **Build & prompt check** — follow `/home/workshop/.agents/skills/inference-snap-build-and-test/SKILL.md`
 5. **Create PR** — `subagent_type: inference-snap-create-pr-stage`
 
 ## Pre-flight (before launching stage 1)
@@ -41,7 +41,7 @@ If any of these are missing, ask before starting the chain.
   - Stage 1: `inference-snap-structure-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-structure-stage.md`)
   - Stage 2: `inference-snap-github-workflows-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-github-workflows-stage.md`)
   - Stage 3: `inference-snap-static-checks-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-static-checks-stage.md`)
-  - Stage 4: `inference-snap-build-prompt-check-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-build-prompt-check-stage.md`)
+  - Stage 4: `inference-snap-build-and-test-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-build-and-test-stage.md`)
   - Stage 5: `inference-snap-create-pr-stage` (agent file: `/home/workshop/.agents/agents/inference-snap-create-pr-stage.md`)
 - Launch stages one at a time. Wait for stage N to return before launching stage N+1.
 - Each subagent prompt MUST be self-contained — the subagent has no view of this conversation. Always include:
