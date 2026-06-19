@@ -37,15 +37,7 @@ workshop shell
 ```
 
 ### 3. Prepare the workshop environment
-After entering the workshop, run:
-
-```bash
-sudo snap install snapcraft --classic
-```
-
-This enables snap builds with the `snapcraft` command.
-
-To create a pull request at the end of the workflow, configure GitHub credentials in the workshop environment:
+To create a pull request at the end of the workflow, configure GitHub credentials inside the workshop environment:
 
 ```bash
 sudo snap install gh --classic
@@ -114,13 +106,13 @@ base: ubuntu@24.04
 sdks:
   # Useful for testing the SDK in isolation, but not required to run the skills
   - name: vscode-remote
-  # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
   - name: opencode
     channel: latest/stable
     plugs:
       api:
         interface: tunnel
         endpoint: localhost:<PORT>
+  # The SDK should be cloned inside the workshop directory and built with `sdkcraft try` before launching the workshop
   - name: try-inference-snaps-sdk
   - name: system
     slots:
