@@ -37,15 +37,7 @@ workshop shell
 ```
 
 ### 3. Prepare the workshop environment
-After entering the workshop, run:
-
-```bash
-sudo snap install snapcraft --classic
-```
-
-This enables snap builds with the `snapcraft` command.
-
-To create a pull request at the end of the workflow, configure GitHub credentials in the workshop environment:
+To create a pull request at the end of the workflow, configure GitHub credentials inside the workshop environment:
 
 ```bash
 sudo snap install gh --classic
