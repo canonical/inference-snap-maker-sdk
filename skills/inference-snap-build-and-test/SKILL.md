@@ -15,11 +15,9 @@ Execute end-to-end verification that the snap builds, installs, starts, and serv
 
 1. Build and pack:
    - Run: snapcraft pack --destructive-mode
-   - Confirm .snap and .comp artifacts are generated.
    - Do not use any other command to build or pack the snap, as it may not produce the expected artifacts.
 2. Install artifacts:
    - Run: sudo snap install *.snap *.comp --dangerous
-   - Confirm command output indicates successful installation.
 3. Connect required interfaces:
    - Run: sudo snap connect <snap-name>:<interface>
    - Required interfaces include:
@@ -35,7 +33,7 @@ Execute end-to-end verification that the snap builds, installs, starts, and serv
    - Confirm the script output indicates successful execution.
    - If the script fails, report the exact failing command and output, and apply a patch with the smallest viable fix
    - If the script passes, proceed to the next step.
-   - Discover which are compatible by running sudo <snap-name> list-engines. Check the key compatible in the output for each engine.
+   - Discover which are compatible by running `<snap-name> list-engines --format json`. Check the key compatible in the output for each engine.
    - Repeat the smoke test for each compatible engine. 
 
 ## Rules
