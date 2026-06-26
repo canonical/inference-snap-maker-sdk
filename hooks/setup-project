@@ -9,12 +9,12 @@ shopt -s nullglob
 
 for skill_dir in "$SDK/skills"/*/; do
     skill_name=$(basename "$skill_dir")
-    rm -rf "$SKILLS_DST/$skill_name"
+    rm -rf "${SKILLS_DST:?}/$skill_name"
     cp -r "$skill_dir" "$SKILLS_DST/$skill_name"
 done
 
 for agent in "$SDK/agents"/*; do
     agent_name=$(basename "$agent")
-    rm -rf "$AGENTS_DIR/$agent_name"
+    rm -rf "${AGENTS_DIR:?}/$agent_name"
     cp -r "$agent" "$AGENTS_DIR/$agent_name"
 done
