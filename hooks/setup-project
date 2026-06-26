@@ -5,16 +5,16 @@ AGENTS_DIR="/home/workshop/.agents/agents"
 mkdir -p "$SKILLS_DST"
 mkdir -p "$AGENTS_DIR"
 
+shopt -s nullglob
+
 for skill_dir in "$SDK/skills"/*/; do
     skill_name=$(basename "$skill_dir")
-    if [[ ! -d "$SKILLS_DST/$skill_name" ]]; then
-        cp -r "$skill_dir" "$SKILLS_DST/$skill_name"
-    fi
+    rm -rf "${SKILLS_DST:?}/$skill_name"
+    cp -r "$skill_dir" "$SKILLS_DST/$skill_name"
 done
 
 for agent in "$SDK/agents"/*; do
     agent_name=$(basename "$agent")
-    if [[ ! -e "$AGENTS_DIR/$agent_name" ]]; then
-        cp -r "$agent" "$AGENTS_DIR/$agent_name"
-    fi
+    rm -rf "${AGENTS_DIR:?}/$agent_name"
+    cp -r "$agent" "$AGENTS_DIR/$agent_name"
 done
