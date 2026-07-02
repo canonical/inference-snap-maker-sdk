@@ -166,13 +166,6 @@ jobs:
             expected-tps: 9.4
             test-image-prompt: true
 
-          # - job-queue: anbox-amd-amd64
-          #   provision-data: "distro: noble"
-          #   select-engine: amd-gpu
-          #   test-chat-tps: true
-          #   expected-tps: 10
-          #   test-image-prompt: true
-
     uses: canonical/inference-snaps-testing/.github/workflows/test-snap.yaml@v1
     secrets: inherit
     with:
@@ -217,7 +210,7 @@ jobs:
         with:
           repository: canonical/inference-snaps-cli
           path: inference-snaps-cli
-          ref: v1.0.0
+          ref: vXXX # Pin to the SAME inference-snaps-cli version used by the `cli` part in snap/snapcraft.yaml (must be a real tag, not a placeholder)
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -249,11 +242,24 @@ git lfs prune --force
    - `init-build-script` in build workflows if a different script is needed
    - `publish-channel` values if different channels are required
    - Matrix jobs in testflinger-tests.yaml based on target engines and test infrastructure
+   - In `validate-engines.yaml`, replace `ref: vXXX` with the SAME
+     `inference-snaps-cli` tag used by the `cli` part in `snap/snapcraft.yaml`
+     (a placeholder ref will make the job fail).
+   - Set testflinger capability flags from the model's ACTUAL capabilities:
+     `test-image-prompt` only for vision models; drop it (or set false) for
+     text-only models. Only set `expected-tps` when you have a real measured
+     baseline for that model+engine — do not copy another model's number.
+   - Include one testflinger matrix job per engine the snap actually ships
+     (e.g. `cpu`, `nvidia-gpu`); keep unrelated example jobs commented out.
 3. Create `init-build.sh` in the workflows directory and make it executable.
-4. Verify that required secrets are configured in the repository:
+4. Ensure a repo-root model-prep entrypoint exists for CI. The build reusable
+   workflow runs `./download-models.sh` (the value of `init-build-script`), so
+   if the repo only has a Makefile, create a `download-models.sh` wrapper that
+   runs `make download-models && make split-model` and make it executable.
+5. Verify that required secrets are configured in the repository:
    - `STORE_LOGIN_PR` — credentials for publishing PR builds
    - `STORE_LOGIN_MAIN` — credentials for publishing main branch builds
-5. Verify that required variables are configured in the repository:
+6. Verify that required variables are configured in the repository:
    - `PR_BUILD_TRIGGER_LABEL` — label that triggers PR builds
    - `PR_TEST_TRIGGER_LABEL` — label that triggers PR tests
 
@@ -267,6 +273,12 @@ git lfs prune --force
 
 - Always create all workflow files unless explicitly told otherwise.
 - Replace `<snap-name>` in testflinger-tests.yaml with the actual snap name.
+- Pin `validate-engines.yaml`'s `inference-snaps-cli` ref to the same version as
+  the `cli` part in `snap/snapcraft.yaml`; never leave the `vXXX` placeholder.
+- Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
+  measured baselines — do not carry over another model's values.
+- Ensure a repo-root `download-models.sh` exists (wrapping the Makefile) since CI
+  invokes `./download-models.sh`; make it executable.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.
 - Keep commented-out matrix entries (e.g., AMD GPU) for reference.
 - Ensure init-build.sh has executable permissions.

@@ -11,6 +11,33 @@ scope: user
 
 Execute end-to-end verification that the snap builds, installs, starts, and serves prompts correctly.
 
+## Host prerequisites (check before building)
+
+`snapcraft pack --destructive-mode` builds directly on the host, so verify these
+first and stop-and-report anything missing rather than silently degrading:
+
+- **OS:** Ubuntu matching the snap `base` (e.g. `core24` ⇒ noble 24.04).
+- **Tools:** `snapcraft`, `snapd` active, `make`, `cmake`, `build-essential`,
+  `git`, plus smoke-test deps `curl`, `jq`, `ss` (iproute2). Install any missing.
+- **Root:** `--destructive-mode` installs build-packages, so run it under `sudo`.
+- **Disk:** compute the summed size of the model + all shard/runtime components
+  and require that much free space **on the filesystem backing
+  `/var/lib/snapd/snaps`** (where `snap install` copies artifacts), not just the
+  build dir. A large model can exceed a small container root FS; if so, stop and
+  report that the root FS must be resized (or relocate snapd storage only with
+  explicit approval).
+- **GPU:** detect `/dev/nvidia*` / `nvidia-smi` / `/dev/dri`. A GPU engine can
+  only be smoke-tested if the matching hardware is present; otherwise it will
+  report `compatible: false` and is skipped (not a failure).
+
+## Model preparation (before packing)
+
+The model artifacts are not committed. Before `snapcraft pack`, run the repo's
+model preparation (typically `./download-models.sh`, which may wrap
+`make download-models && make split-model`) so the component payloads exist on
+disk. For sharded models, confirm every shard landed in its component directory
+with the exact filename the `model.yaml` layout expects.
+
 ## Required Workflow
 
 1. Build and pack:

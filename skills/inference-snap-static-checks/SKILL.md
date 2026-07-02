@@ -40,8 +40,8 @@ Validate correctness before build/run by checking metadata integrity, component 
 5. General consistency checks:
    - No duplicate component names across parts and components sections.
    - The install hooks sets ports to the requested values and sets the host to the default value of `127.0.0.1`
-   - The `download_models.sh` script downloads the right model files to the expected location under the `components` directory, and it should be executable. If the model is sharded, all shards should land in the same directory.
-   - Model files (like `*.gguf`) should be git ignored.
+   - The `Makefile` downloads the right model files to the expected location under the `components` directory, and it should be called by the agent before packing the snap. If the model is sharded, all shards should land in the same directory.
+   - Model files (like `*.gguf`) should be git ignored and not pushed with git-lfs.
 6. component.yaml consistency checks:
    - Engine related components, like `llamacpp` or `llamacpp-cuda` specify their endpoints in component.yaml, along with the required environment variables, while the `server` script must have the execution flag set, and it should get the configuration from `modelctl` and runs the server with the correct parameters.
    - Model files components must have a `component.yaml` that specifies the MODEL_NAME with a value matching the actual model name and model path pointing to the correct location of the model files. If the model is sharded, `component.yaml` should also specify symlink creation to make all shards available under a common path.
