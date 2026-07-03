@@ -26,6 +26,25 @@ first and stop-and-report anything missing rather than silently degrading:
   build dir. A large model can exceed a small container root FS; if so, stop and
   report that the root FS must be resized (or relocate snapd storage only with
   explicit approval).
+
+  **Approved snapd-storage relocation (workshop containers).** When the
+  root FS backing `/var/lib/snapd/snaps` is too small but a large volume is
+  mounted (typically `/project`), relocate snapd's snap storage there via a
+  bind-mount before building. This is the established workaround and keeps
+  `snap install` off the small root FS:
+
+  ```bash
+  sudo mkdir -p /project/.snapd-relocate/snaps
+  sudo cp -a /var/lib/snapd/snaps/. /project/.snapd-relocate/snaps/   # preserve existing snaps
+  sudo mount --bind /project/.snapd-relocate/snaps /var/lib/snapd/snaps
+  sudo systemctl restart snapd                                        # re-mount snaps from new backing
+  df -h /var/lib/snapd/snaps                                          # confirm large space now visible
+  ```
+
+  snapcraft's own `parts/`, `stage/`, `prime/` already live in the project dir
+  (on `/project`), so only snapd's storage needs relocating. Add
+  `.snapd-relocate/` to `.gitignore`. Do this only with the space actually
+  available on the large volume; never modify container configuration.
 - **GPU:** detect `/dev/nvidia*` / `nvidia-smi` / `/dev/dri`. A GPU engine can
   only be smoke-tested if the matching hardware is present; otherwise it will
   report `compatible: false` and is skipped (not a failure).

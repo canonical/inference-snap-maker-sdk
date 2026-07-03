@@ -1,0 +1,45 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "inference-snap-structure-stage": {
+      "description": "Stage 1 of the inference-snap pipeline: scaffold the snap structure (snapcraft.yaml, hooks, engines, models, runtimes, components, scripts) using RULESET.md.",
+      "mode": "subagent",
+      "prompt": "{file:./../../.agents/agents/inference-snap-structure-stage.md}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "inference-snap-github-workflows-stage": {
+      "description": "Stage 2 of the inference-snap pipeline: create .github/workflows and the repo-root download-models.sh CI entrypoint.",
+      "mode": "subagent",
+      "prompt": "{file:./../../.agents/agents/inference-snap-github-workflows-stage.md}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "inference-snap-static-checks-stage": {
+      "description": "Stage 3 of the inference-snap pipeline: statically validate the snap before build.",
+      "mode": "subagent",
+      "prompt": "{file:./../../.agents/agents/inference-snap-static-checks-stage.md}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "inference-snap-build-and-test-stage": {
+      "description": "Stage 4 of the inference-snap pipeline: build, install, connect interfaces, and smoke-test the snap.",
+      "mode": "subagent",
+      "prompt": "{file:./../../.agents/agents/inference-snap-build-and-test-stage.md}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  }
+}

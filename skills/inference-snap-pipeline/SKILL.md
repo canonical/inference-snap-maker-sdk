@@ -31,6 +31,12 @@ Instead assume the following:
 Before starting the chain, make sure that all the previous inputs are available and valid, moreover make sure that there is a valid Makefile in the target workspace path.
 It is there to download (and, for large models, split) the models. Subagents will need to use it.
 
+**Validate `snap-name` early.** The snap name MUST match
+`^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). If the input contains a dot, underscore,
+or uppercase (e.g. `qwen3.5`), it is invalid and `snapcraft pack` will fail late.
+Propose the hyphenated form (`qwen3.5` → `qwen3-5`), confirm with the user, and use
+it as the store name + CLI command; keep the original as the friendly display name.
+
 The single model-preparation entrypoint used by both local builds and CI is a
 repo-root **`download-models.sh`** (the CI reusable workflow invokes
 `./download-models.sh`, not `make`). It SHOULD wrap the Makefile
@@ -51,7 +57,7 @@ After confirmation modify the README by replacing inputs placeholders with the a
   - Stage 2: `inference-snap-github-workflows-stage` (agent file: `agents/inference-snap-github-workflows-stage.md`)
   - Stage 3: `inference-snap-static-checks-stage` (agent file: `agents/inference-snap-static-checks-stage.md`)
   - Stage 4: `inference-snap-build-and-test-stage` (agent file: `agents/inference-snap-build-and-test-stage.md`)
-- These `subagent_type`s must be registered in the opencode config (e.g. `opencode.jsonc`) for the `Task` tool to accept them. If the runtime rejects them as unknown agent types, do NOT fall back to `general-purpose`: instead execute each stage **inline yourself**, following the corresponding agent `.md` as your system prompt and its skill/RULESET as the reference, still producing the stage's `pipeline-report` block before moving on. Surface that you are running inline so the behavior is transparent.
+- These `subagent_type`s must be registered in the opencode config (e.g. `opencode.jsonc`) for the `Task` tool to accept them. As shipped, `~/.config/opencode/opencode.jsonc` does NOT register them, so the `Task` tool rejects them with `Unknown agent type: … is not a valid agent type`. Register them (see the sample `opencode.jsonc` that maps each `subagent_type` to its `agents/*.md` via `prompt: {file:…}`); until that is done, the inline-execution path below is the normal path, not an exception. If the runtime rejects them as unknown agent types, do NOT fall back to `general-purpose`: instead execute each stage **inline yourself**, following the corresponding agent `.md` as your system prompt and its skill/RULESET as the reference, still producing the stage's `pipeline-report` block before moving on. Surface that you are running inline so the behavior is transparent.
 - Launch stages one at a time. Wait for stage N to return (or complete inline) before launching stage N+1.
 - Each subagent prompt MUST be self-contained — the subagent has no view of this conversation. Always include:
   1. The user's original request (verbatim).

@@ -59,7 +59,10 @@ you MUST derive them from the real model artifact size:
 - Do not introduce new dependencies or download flows without confirmation.
 - Do not skip user-provided port and host requirements.
 - Do not invent model IDs, file paths, or component names — derive them from inputs or the reference.
-- `scripts/completion.bash` MUST be a static source file with the verbatim content from RULESET §5.4. Do NOT generate it from the CLI binary at build time (no `modelctl completion bash` or `./bin/<name> completion bash` in any override-build). The script sources the CLI's completion output at runtime via `source <($SNAP/bin/modelctl completion bash)`.
+- The v2 `inference-snaps-cli` tarball already ships `bin/snap-completer.bash`, so the DEFAULT is `completer: bin/snap-completer.bash` and NO repo `scripts/completion.bash` (this is what `gemma4-snap` does). Only add a static `scripts/completion.bash` if a custom completer is explicitly wanted; if so it must source the CLI output at runtime (`source <($SNAP/bin/modelctl completion bash)`) and must NOT be generated at build time.
+- validate `snap-name` against `^[a-z0-9]+(-[a-z0-9]+)*$` and each `model.yaml` `disk-size` against `^[0-9]+[KMG]$` (e.g. `3420M`); both are blocking if malformed.
+- `local-component-files` MUST end with `prime: [-*]`; runtime/CLI/webui parts MUST use real pinned release URLs (see RULESET §3.6), not placeholder `mkdir` parts.
+- for multiple model sizes, keep one engine per backend with several `model.options` (encode size in the model id/name), not one engine per size.
 
 ## Required output
 

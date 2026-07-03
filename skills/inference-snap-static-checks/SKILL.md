@@ -13,48 +13,97 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 ## Checklist
 
+0. Pre-flight input validation (ADDED — do first; these are cheap and prevent
+   late build failures):
+   - `snap-name` MUST match `^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). A dot,
+     underscore, or uppercase is **blocking** — e.g. `qwen3.5` must become
+     `qwen3-5`. `snapcraft pack` rejects invalid names outright.
+   - Each `models/*/model.yaml` `disk-size` MUST match `^[0-9]+[KMG]$`
+     (integer + binary unit, e.g. `3420M`). Decimals or a trailing `B`
+     (`3.4GB`) are **blocking**: they break `modelctl list-models` with
+     `strconv.ParseUint: parsing "3.4GB": invalid syntax`.
+
 1. snap/snapcraft.yaml checks:
-   - Name/summary/description match target model.
-   - Components declared under both parts and components sections.
-   - App commands match existing binaries/symlinks.
-   - Hooks and scripts referenced by snapcraft actually exist.
+   - Name/summary/description match target model; `name` passes the regex above.
+   - Every component under `components/` is declared in `snapcraft.yaml#components`
+     and every declared model/mmproj component has a `components/<name>/` dir.
+   - App commands match existing binaries/symlinks (e.g. `bin/<snap-name>` created
+     by the `cli` part's `ln --symbolic ./modelctl bin/<snap-name>`); the app
+     `completer` is usually `bin/snap-completer.bash` (shipped by the CLI tarball).
+   - Hooks and scripts referenced by snapcraft actually exist on disk.
    - Engine/component naming consistency.
-   - Each component name must be all lowercase, and must not contain any underscores or special characters other than hyphens. This is to ensure compatibility with snapcraft's naming conventions and to avoid potential issues during the build process.
-   - The organize step in parts should be moving files from a correct path into a correct component name (or path). The component name is correct if it matches the name of the component declared in the components section, and the path is correct if it points to the expected location of the component's files after the build process.
-   - Each directory under the `components` folder should have a matching component declared in the snapcraft.yaml, and each component declared in the snapcraft.yaml should have a corresponding directory under `components`. This ensures that all components are properly defined and organized within the snap structure.
-   - If sharded models are included in the repository, each shard must be declared as a separate component in the snapcraft.yaml, and the organize step should correctly handle the placement of these shards into the appropriate component directories. This is important to ensure that all parts of the model are included in the snap and can be accessed correctly during runtime.
-   - The `server` app adds `chat` the the main app's `ADDITIONAL_FEATURES`, while the `server-webui` app adds `webui` to the main app's `ADDITIONAL_FEATURES`. This is important for ensuring that the correct features are detected by the cli.
-   - Each app should have the right snapcraft interfaces declared, for example servers should have `network-bind`.
-2. Empty/incomplete component checks:
-   - Each component directory has component.yaml.
-   - Required artifacts exist (for model components: expected GGUF shards/files).
-   - No placeholder-only component directories unless intentionally declared.
-3. Engine sanity checks:
-   - engine.yaml exists for each engine directory.
-   - components list refers to existing components.
-   - memory/disk constraints are realistic.
+   - Each component name is all lowercase, hyphens only (no underscores/dots).
+   - The `organize` step moves files into a correct `(component/<name>)` (or path):
+     the component name matches a declared component; for split models there is one
+     organize line per shard file. `local-component-files` MUST end with
+     `prime: [-*]` so unorganized sources don't leak into the base snap.
+   - Sharded models: each shard is declared as its own component and organized into
+     its own component dir.
+   - Each app has the right interfaces (servers need `network-bind`; the `server`
+     daemon typically also has `hardware-observe`, `opengl`, `home`, and
+     `process-control`).
+   - `ADDITIONAL_FEATURES` (CHANGED, non-blocking): the reference (`gemma4-snap`)
+     sets `ADDITIONAL_FEATURES: chat, webui` on the **main** app only and omits it
+     on `server`/`server-webui`. Some CLI versions instead expect `server` to add
+     `chat` and `server-webui` to add `webui`. Verify against the CLI version in
+     use; treat a mismatch as non-blocking unless feature detection actually fails.
+
+2. Component completeness checks (CHANGED for v2):
+   - Each `components/<name>/` dir exists and (after model prep) holds the expected
+     GGUF file(s)/shards. There is NO `component.yaml` in v2.
+   - No placeholder-only component dirs unless intentionally declared (a README-only
+     dir is fine pre-download; the artifact must exist before packing).
+
+3. Engine sanity checks (v2):
+   - `engine.yaml` exists for each `engines/<name>/` dir and its `server` is
+     executable.
+   - `engine.yaml` `runtime` resolves to a `runtimes/<runtime>/runtime.yaml`.
+   - `engine.yaml` `model.default` and every `model.options` entry resolve to a
+     `models/<id>/model.yaml`.
+   - Memory/disk constraints (if present) are realistic.
+   - Each `engine.yaml` specifies a list of compatible `devices`.
+   - If an AMD-GPU engine is present, the `server` app in `snapcraft.yaml` should
+     include the `process-control` interface.
+
 4. Model signature/provenance checks:
    - Verify source model URL and repository owner are the expected target.
-   - Capture model filename, linked size, and ETag/hash headers when available.
-   - If available, compare checksums of downloaded model file to trusted source metadata.
+   - Capture model filename, linked size (`x-linked-size`), and ETag/hash headers.
+   - If available, compare checksums of the downloaded file to trusted metadata.
+
 5. General consistency checks:
-   - No duplicate component names across parts and components sections.
-   - The install hooks sets ports to the requested values and sets the host to the default value of `127.0.0.1`
-   - The `Makefile` downloads the right model files to the expected location under the `components` directory, and it should be called by the agent before packing the snap. If the model is sharded, all shards should land in the same directory.
-   - Model files (like `*.gguf`) should be git ignored and not pushed with git-lfs.
-6. component.yaml consistency checks:
-   - Engine related components, like `llamacpp` or `llamacpp-cuda` specify their endpoints in component.yaml, along with the required environment variables, while the `server` script must have the execution flag set, and it should get the configuration from `modelctl` and runs the server with the correct parameters.
-   - Model files components must have a `component.yaml` that specifies the MODEL_NAME with a value matching the actual model name and model path pointing to the correct location of the model files. If the model is sharded, `component.yaml` should also specify symlink creation to make all shards available under a common path.
-   - MMPROJ related components must have a `component.yaml` that specifies the `MMPROJ_FILE` environment variable pointing to the correct location of the weights file. MODEL_NAME should not be set here.
-7. Engines consistency checks:
-   - Each engine directory must contain an `engine.yaml` that lists all components related to that engine, targeting the correct model variant and mmproj (if applicable).
-   - The `engine.yaml` should specify realistic memory and disk constraints based on the expected resource usage of the engine and its components.
-   - The components listed in `engine.yaml` must exist and be properly defined with their own `component.yaml`.
-   - The `engine.yaml` should not reference components that are not declared in the snapcraft.yaml or that do not exist in the expected directory structure.
-   - The `server` file must have the executable flag set
-   - The engine name should contain a reference to the model size, if multiple sizes are packed inside a single snap.
-   - The model description should reference the supported silicon and model variant.
-   - Each `engine.yaml` file should specify a list of compatible devices.
+   - No duplicate component names.
+   - The install hook seeds ports to the requested values and host `127.0.0.1`,
+     and its `use-engine --fallback=<engine>` names a real `engines/<engine>/`
+     (ADDED: a dangling fallback such as `--fallback=cpu` with only `cpu-4b`/
+     `cpu-9b` engines is **blocking**).
+   - The `Makefile`/`download-models.sh` downloads the right files to the exact
+     `components/<name>/` dirs with the exact filenames referenced by
+     `model.yaml` `MODEL_FILE`/`MMPROJ_FILE` and by the snapcraft `organize` map.
+     For sharded models each shard lands in its own component dir with the
+     `...-000NN-of-000MM.gguf` name llama-server expects.
+   - `*.gguf` are git-ignored and NOT pushed via git-lfs.
+   - A repo-root `download-models.sh` exists (CI invokes `./download-models.sh`).
+
+6. model.yaml consistency checks (CHANGED — replaces old component.yaml section):
+   - Text/model entries set `MODEL_NAME` (the `--alias`, API-visible id) and
+     `MODEL_FILE`. Multimodal entries also set `MMPROJ_FILE`. `capabilities`
+     includes `vision` when an mmproj is shipped.
+   - Sharded models set `SHARDS_DIR` + `MODEL_FILE=$SHARDS_DIR/<shard-1>` and a
+     `layout:` block symlinking every shard from its component dir into
+     `SHARDS_DIR` (llama-server auto-discovers the rest). mmproj stays a separate
+     single-file component.
+   - `MODEL_FILE`/`MMPROJ_FILE`/`SHARDS_DIR` paths resolve at runtime.
+
+7. runtime.yaml consistency checks (CHANGED — replaces old engine `components` list):
+   - Each `runtime.yaml` declares its server protocol(s) (e.g. `openai` `http`
+     `/v1`), the `PATH`/`LD_LIBRARY_PATH` env into `$SNAP_COMPONENTS/<runtime>/…`,
+     and a `components:` list referencing the runtime payload component(s) that are
+     declared in `snapcraft.yaml` and built by parts.
+   - The engine `server` file is executable and, for llama.cpp, runs `llama-server
+     --model "$MODEL_FILE" --alias "$MODEL_NAME" [--mmproj "$MMPROJ_FILE"] --port …
+     --host …`.
+   - The model description references the supported silicon and model variant.
+
 
 ## Output
 

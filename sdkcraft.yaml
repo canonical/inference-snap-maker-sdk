@@ -24,3 +24,8 @@ parts:
     source: agents/
     organize:
       "*": agents/
+  opencode-config:
+    plugin: dump
+    source: opencode/
+    organize:
+      "*": opencode/

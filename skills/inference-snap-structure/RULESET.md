@@ -118,7 +118,9 @@ platforms:
   arm64:
 ```
 
-SHOULD include `website`, `source-code`, and `issues` fields.
+SHOULD include `website`, `source-code`, and `issues` fields. Also
+SHOULD include `title`, `contact`, and `license` — snapcraft's metadata linter
+warns when they are empty.
 
 ### 3.2 Environment
 
@@ -209,11 +211,42 @@ MUST include these functional groups:
 - `local-component-files`
 - runtime payload parts (for example `llamacpp`, `llamacpp-cuda`, `llamacpp-rocm`, `openvino-model-server`)
 
-`local-component-files` SHOULD use `plugin: cmake` with `override-build` copy
-workaround to avoid unwanted `dump` behavior for very large payloads.
+`local-component-files` SHOULD use `plugin: cmake` with an `override-build` copy
+workaround to avoid unwanted `dump` behavior for very large payloads, and MUST
+end with `prime: [-*]` so unorganized component sources do not leak into the base
+snap. ADDED — canonical shape (from gemma4-snap):
+
+```yaml
+  local-component-files:
+    plugin: cmake
+    source: components
+    override-build: |
+      cp -rf --archive --link --no-dereference ${CRAFT_PART_SRC}/* ${CRAFT_PART_INSTALL}
+    organize:
+      "model-<slug>/*": (component/model-<slug>)
+      "mmproj-<slug>/*": (component/mmproj-<slug>)
+      # one line per shard for split models, mapping each shard file to its component
+    prime:
+      - -*   # exclude everything not explicitly organized
+```
 
 NVIDIA detection SHOULD use a minimal `cli-nvidia-smi` part that copies only
 `/usr/bin/nvidia-smi` and related license text.
+
+**Runtime & CLI artifact sources** (pin a known-good tag; verify each URL
+returns HTTP 200 before use). A literal scaffold with placeholder parts will NOT
+build — use these real sources:
+
+- CLI: `https://github.com/canonical/inference-snaps-cli/releases/download/<CLI_TAG>/inference-snaps-cli-linux-{amd64,arm64}.tar.xz`
+  (ships `bin/modelctl` and `bin/snap-completer.bash`). Symlink the app command
+  to `modelctl` in `override-build`: `ln --symbolic ./modelctl bin/<SNAP_NAME>`.
+- WebUI: `https://github.com/canonical/inference-snaps-webui/releases/download/<WEBUI_TAG>/inference-snaps-webui.tar.xz`, organized into `webui/`.
+- llama.cpp runtimes: `https://github.com/canonical/llama.cpp-builds/releases/download/<LLAMA_BUILD>/llamacpp-{amd64,arm64}[+cuda12.9|+rocm|+onemkl].tar.gz`,
+  each organized into `(component/<runtime>)` with `stage-packages: [libgomp1]`
+  (add `libatomic1` for rocm/onemkl).
+
+The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
+`validate-engines` CI job's checkout `ref`.
 
 ### 3.7 Components (top-level)
 
@@ -357,9 +390,16 @@ if [ -n "$openai_url" ]; then
 fi
 ```
 
-### 5.4 scripts/completion.bash (optional)
+### 5.4 scripts/completion.bash (OPTIONAL — usually NOT needed)
 
-Common pattern:
+The v2 `inference-snaps-cli` release tarball already ships
+`./bin/snap-completer.bash`. The recommended default is therefore to set the
+app `completer: bin/snap-completer.bash` (as `gemma4-snap` does) and NOT ship a
+repo `scripts/completion.bash` at all.
+
+Only add a repo `scripts/completion.bash` if you deliberately want a custom
+completer. If you do, it is a static source file with this content (it sources
+the CLI's completion output at runtime — do NOT generate it at build time):
 
 ```bash
 unset -f _init_completion
@@ -391,6 +431,13 @@ model:
 engines.
 
 `experimental: true` MAY be set for non-default experimental engines.
+
+**Multiple model sizes in one snap:** keep ONE engine per backend
+(e.g. `cpu`, `nvidia-gpu`) and list every size in `model.options` with one as
+`model.default`. Encode the size in the *model id/name* (e.g.
+`qwen-3-5-4b-q4-k-xl`, `qwen-3-5-9b-q4-k-m`), NOT in the engine name. This is what
+`gemma4-snap` does (3 sizes under a single `cpu` engine) and it keeps
+`use-engine --fallback=cpu` valid. Do NOT create `cpu-4b`/`cpu-9b` engines.
 
 ### 6.2 Devices
 
@@ -455,7 +502,9 @@ name: {{MODEL_FAMILY_OR_SIZE}}
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
-disk-size: {{SIZE}}
+disk-size: {{SIZE}}   # CHANGED: integer + binary unit only, e.g. 3420M / 6300M / 16163M.
+                      # Decimals or a trailing "B" (e.g. "3.4GB") break `modelctl list-models`
+                      # with: strconv.ParseUint: parsing "3.4GB": invalid syntax
 capabilities:
   - text
 components:
