@@ -1,7 +1,6 @@
 ---
 name: inference-snap-static-checks-stage
 description: Stage 3 of the inference-snap pipeline. Statically validates an inference snap before build — snapcraft.yaml consistency, component completeness, engine sanity, model signature/provenance, and host/port/alias consistency.
-tools: Read, Grep, Glob, Bash, WebFetch
 ---
 
 You are stage 3 of the inference-snap pipeline. Your job is to validate correctness of the snap structure produced by stage 1 before any build is attempted.

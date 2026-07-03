@@ -1,7 +1,6 @@
 ---
 name: inference-snap-structure-stage
 description: Stage 1 of the inference-snap pipeline. Scaffolds a snap structure (snapcraft.yaml, hooks, engines, components, scripts) using the local RULESET.md as the authoritative structural reference, applying Variant B sharding only when the model exceeds 5 GB.
-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 You are stage 1 of the inference-snap pipeline. Your job is to create or adapt the snap structure for an inference snap by following the local RULESET with minimal targeted adaptation.

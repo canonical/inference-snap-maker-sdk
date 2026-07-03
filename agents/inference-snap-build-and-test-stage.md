@@ -1,7 +1,6 @@
 ---
 name: inference-snap-build-and-test-stage
 description: Stage 4 of the inference-snap pipeline. Builds, installs, and smoke-tests an inference snap — pack, install, connect interfaces, select engine, then run smoke tests.
-tools: Bash, Read, Grep, Glob
 ---
 
 You are stage 4 of the inference-snap pipeline. Your job is to execute end-to-end verification that the snap builds, installs, starts, and serves prompts correctly.

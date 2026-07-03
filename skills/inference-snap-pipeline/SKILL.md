@@ -21,9 +21,8 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 
 ## Pre-flight (before launching stage 1)
 
-Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, then reuse across all stages:
-- Snap name.
-- Ports/hosts for hooks.
+Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, the inputs passed in the commented
+block at the top of the file (between `<!--` and `-->`) and verify that they are all present and valid. If any are missing or invalid, ask the user to provide them before starting the chain.
 
 Instead assume the following:
 - Target workspace path is where the `workshop.yaml` resides, it is the root directory of the inference snap repository
@@ -42,6 +41,8 @@ Also derive the model artifact URL (the HuggingFace `resolve` URL) from the
 Makefile/README so stage 1 can measure its size and pick the sharding variant.
 
 If any of these are missing, ask before starting the chain. Also prepare a recap and ask for confirmation before starting the chain.
+
+After confirmation modify the README by replacing inputs placeholders with the actual values. Do not modify any other part of the README.
 
 ## Orchestration rules
 
