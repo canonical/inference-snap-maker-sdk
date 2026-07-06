@@ -39,4 +39,4 @@ jobs:
       platforms: '["amd64"]'
       platform-flag: "--build-for" # default value, can also be --platform for multi-base SDKs
     secrets:
-      SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS_STAGING }}
+      SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
