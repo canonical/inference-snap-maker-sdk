@@ -1,136 +1,42 @@
+# TODO: Adjust the branch pattern, platforms, and platform-flag for your SDK.
+#
+# Branch patterns:
+#   "[0-9]+"         — major-only branches (e.g., 20, 22, 24)
+#   "[0-9]+.[0-9]+"  — major.minor branches (e.g., 1.24, 7.1)
+#
+# Platforms:
+#   Single-base (build-base in sdkcraft.yaml):
+#     '["amd64"]'
+#     '["amd64","arm64","riscv64"]'
+#   Multi-base (no build-base, multiple ubuntu@ entries in platforms):
+#     '["ubuntu@22.04:amd64","ubuntu@24.04:amd64"]'
+#
+# Platform flag:
+#   --build-for  (default) — for single-base SDKs
+#   --platform             — for multi-base SDKs
+
 name: Build and Upload SDK
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - "[0-9]+.[0-9]+"
+  workflow_dispatch:
     inputs:
-      ref:
-        description: "Git ref to checkout. Defaults to the ref that triggered the workflow."
-        required: false
-        type: string
-      runs-on:
-        description: "JSON array of runner labels."
-        required: false
-        type: string
-        default: '["self-hosted","linux","jammy","x64","xlarge"]'
-      platforms:
-        description: 'JSON array of platforms, e.g. ["amd64","arm64","riscv64"]'
-        required: true
-        type: string
-      platform-flag:
-        description: "Flag passed to sdkcraft pack: --build-for or --platform"
-        required: false
-        type: string
-        default: "--build-for"
-      subdirectory:
-        description: "Subdirectory where SDK is defined."
-        required: false
-        type: string
-      track:
-        description: "Release track to upload to (e.g. 1.24). Defaults to the branch name."
-        required: false
-        type: string
-      risk:
-        description: "Risk level to release to (e.g. edge, beta, stable)."
-        required: false
-        type: string
-        default: "edge"
       branch:
-        description: "Branch to release to (e.g. dev)."
-        required: false
-        type: string
-      run-tests:
-        description: "Run sdkcraft tests after building, before upload."
-        required: false
-        type: boolean
-        default: false
-    secrets:
-      SDKCRAFT_STORE_CREDENTIALS:
+        description: "Branch name (e.g., 1.0)"
         required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-and-upload:
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
-    strategy:
-      matrix:
-        platform: ${{ fromJSON(inputs.platforms) }}
-    steps:
-      - name: Install LXD
-        uses: canonical/setup-lxd@8c6a87bfb56aa48f3fb9b830baa18562d8bfd4ee # v1
-        with:
-          channel: 6/stable
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ inputs.ref }}
-          persist-credentials: false
-
-      - name: Install sdkcraft
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
-        with:
-          max_attempts: 3
-          retry_wait_seconds: 60
-          timeout_minutes: 10
-          command: sudo snap install sdkcraft --edge --classic
-
-      - name: Define the track name to upload to
-        run: |
-          if [ -n "$INPUT_TRACK" ]; then
-            TRACK="$INPUT_TRACK"
-          elif [ -n "$INPUT_BRANCH" ]; then
-            TRACK="$INPUT_BRANCH"
-          else
-            TRACK="${GITHUB_REF#refs/heads/}"
-          fi
-          echo "TRACK=$TRACK" >> $GITHUB_ENV
-        env:
-          INPUT_TRACK: ${{ inputs.track }}
-          INPUT_BRANCH: ${{ github.event.inputs.branch }}
-
-      - name: Pack SDK for ${{ matrix.platform }}
-        # use a third-party retry as we cannot fetch a helper from this private repo
-        # in the context of another repo's workflow.
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
-        env:
-          INPUT_PLATFORM_FLAG: ${{ inputs.platform-flag }}
-          MATRIX_PLATFORM: ${{ matrix.platform }}
-          SUBDIRECTORY: ${{ inputs.subdirectory }}
-        with:
-          max_attempts: 3
-          retry_wait_seconds: 60
-          timeout_minutes: 120
-          command: |
-            [ -z "$SUBDIRECTORY" ] || cd "$SUBDIRECTORY"
-            sdkcraft --verbose pack "$INPUT_PLATFORM_FLAG" "$MATRIX_PLATFORM"
-
-      - name: Run tests for ${{ matrix.platform }}
-        if: inputs.run-tests
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
-        env:
-          SUBDIRECTORY: ${{ inputs.subdirectory }}
-        with:
-          max_attempts: 2
-          retry_wait_seconds: 60
-          timeout_minutes: 120
-          command: |
-            [ -z "$SUBDIRECTORY" ] || cd "$SUBDIRECTORY"
-            if [ -f tests/spread.yaml ]; then
-              sdkcraft --verbose test
-            else
-              echo "No tests/spread.yaml found – skipping."
-            fi
-
-      - name: Upload SDK for ${{ matrix.platform }}
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
-        env:
-          INPUT_RISK: ${{ inputs.risk }}
-          INPUT_BRANCH: ${{ inputs.branch }}
-          SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
-          SUBDIRECTORY: ${{ inputs.subdirectory }}
-        with:
-          max_attempts: 3
-          retry_wait_seconds: 3600 # 1 hour
-          timeout_minutes: 10
-          command: |
-            [ -z "$SUBDIRECTORY" ] || cd "$SUBDIRECTORY"
-            for sdk in *.sdk; do
-              sdkcraft --verbose upload "$sdk" --release "${TRACK}/${INPUT_RISK}${INPUT_BRANCH:+/$INPUT_BRANCH}"
-            done
+    uses: canonical/sdkcraft-actions/.github/workflows/upload.yml@main
+    with:
+      platforms: '["amd64"]'
+      platform-flag: "--build-for" # default value, can also be --platform for multi-base SDKs
+    secrets:
+      SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS_STAGING }}
