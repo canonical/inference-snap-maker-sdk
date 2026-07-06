@@ -20,7 +20,7 @@ name: Build and Upload SDK
 on:
   push:
     branches:
-      - "[0-9]+.[0-9]+"
+      - "v[0-9]+"
   workflow_dispatch:
     inputs:
       branch:
@@ -38,5 +38,6 @@ jobs:
     with:
       platforms: '["amd64"]'
       platform-flag: "--build-for" # default value, can also be --platform for multi-base SDKs
+      track: "2"
     secrets:
       SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
