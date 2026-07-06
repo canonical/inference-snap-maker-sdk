@@ -1,6 +1,7 @@
 name: Build SDK
 
 on:
+  push: # for testing
   pull_request:
     branches:
       # TODO: set branch pattern matching your version branches
