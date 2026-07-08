@@ -15,7 +15,6 @@ jobs:
     uses: canonical/sdkcraft-actions/.github/workflows/upload.yml@main
     with:
       platforms: '["amd64"]'
-      platform-flag: "--build-for"
-      track: "latest" # TODO: change to v2 once the guardrail has been added
+      track: "latest" # TODO: change to "2" once the guardrail has been added
     secrets:
       SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
