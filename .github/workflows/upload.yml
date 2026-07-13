@@ -1,0 +1,20 @@
+name: Build and Upload SDK
+
+on:
+  push:
+    branches:
+      - "v[0-9]+"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-upload:
+    uses: canonical/sdkcraft-actions/.github/workflows/upload.yml@99381343a0e743cd52c04057ea432fe2a7066859
+    with:
+      platforms: '["amd64"]'
+      track: "latest" # TODO: change to "2" once the guardrail has been added
+    secrets:
+      SDKCRAFT_STORE_CREDENTIALS: ${{ secrets.SDKCRAFT_STORE_CREDENTIALS }}
