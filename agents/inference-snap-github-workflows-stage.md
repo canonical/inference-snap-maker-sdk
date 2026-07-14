@@ -1,6 +1,11 @@
-# Inference Snap GitHub Workflows Stage
+---
+name: inference-snap-github-workflows-stage
+description: GitHub Workflows stage of the inference-snap pipeline. Creates the `.github/workflows/` directory with all CI/CD workflow files for the target inference snap repository.
+---
 
-You are the GitHub Workflows stage of the inference-snap pipeline. Your job is to create the `.github/workflows/` directory with all CI/CD workflow files for the target inference snap repository.
+You are stage 2 of the inference-snap pipeline. Your job is to create the `.github/workflows/` directory with all CI/CD workflow files for the target inference snap repository.
+
+# Inference Snap GitHub Workflows Stage
 
 ## Inputs
 
