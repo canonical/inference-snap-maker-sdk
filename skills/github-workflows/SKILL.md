@@ -145,7 +145,7 @@ concurrency:
 
 jobs:
   cicd:
-    if: github.repository == 'canonical/{{SNAP_NAME}}' # do not run on forks
+    if: github.repository == 'canonical/{{SNAP_REPOSITORY}}' # do not run on forks
     uses: canonical/inference-snaps-dev/.github/workflows/reuse-cicd.yaml@v2
     with:
       build-runner: |

@@ -265,7 +265,19 @@ llamacpp:
       # move everything, including the staged packages
       "*": (component/llamacpp)
 ```
-
+- notice
+```yaml
+  notice:
+    plugin: nil
+    source: NOTICE
+    source-type: file
+    override-build: |
+      license_dir=$CRAFT_PART_INSTALL/usr/share/doc
+      mkdir -p $license_dir
+      cp NOTICE $license_dir/
+      cp $SNAPCRAFT_PROJECT_DIR/LICENSE $license_dir/
+      cp $SNAPCRAFT_PROJECT_DIR/LICENSE-{{SNAP_NAME}} $license_dir/
+```
 NVIDIA detection SHOULD use a minimal `cli-nvidia-smi` part that copies only
 `/usr/bin/nvidia-smi` and related license text.
 
@@ -605,7 +617,7 @@ components:
 
 ```yaml
 id: {{MODEL_ID}} # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
-name: {{MODEL_FAMILY_OR_SIZE}} #something like 4b
+name: {{MODEL_FAMILY_OR_SIZE}} #same as id
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
