@@ -27,9 +27,6 @@ Validate correctness before build/run by checking metadata integrity, component 
    - Name/summary/description match target model; `name` passes the regex above.
    - Every component under `components/` is declared in `snapcraft.yaml#components`
      and every declared model/mmproj component has a `components/<name>/` dir.
-   - App commands match existing binaries/symlinks (e.g. `bin/<snap-name>` created
-     by the `cli` part's `ln --symbolic ./modelctl bin/<snap-name>`); the app
-     `completer` is usually `bin/snap-completer.bash` (shipped by the CLI tarball).
    - Hooks and scripts referenced by snapcraft actually exist on disk.
    - Engine/component naming consistency.
    - Each component name is all lowercase, hyphens only (no underscores/dots).
@@ -62,8 +59,6 @@ Validate correctness before build/run by checking metadata integrity, component 
      `models/<id>/model.yaml`.
    - Memory/disk constraints (if present) are realistic.
    - Each `engine.yaml` specifies a list of compatible `devices`.
-   - If an AMD-GPU engine is present, the `server` app in `snapcraft.yaml` should
-     include the `process-control` interface.
 
 4. Model signature/provenance checks:
    - Verify source model URL and repository owner are the expected target.
