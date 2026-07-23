@@ -1,6 +1,6 @@
 ---
 name: github-workflows
-description: Create GitHub Actions workflow files for inference snap repositories based on canonical/gemma4-snap patterns.
+description: Create GitHub Actions workflow files for inference snap repositories.
 trigger: Keywords like "add github workflows", "create CI/CD workflows", "set up github actions", "add workflow files"
 scope: user
 ---

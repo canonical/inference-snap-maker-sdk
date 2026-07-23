@@ -1,4 +1,4 @@
-# Inference Snap Structure RULESET (v2, gemma4-aligned)
+# Inference Snap Structure RULESET
 
 This ruleset is self-sufficient. Given a user request an agent MUST be able to scaffold a Canonical inference snap without external examples.
 
@@ -621,7 +621,7 @@ name: {{MODEL_FAMILY_OR_SIZE}} #same as id
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
-disk-size: {{SIZE}}   # CHANGED: integer + binary unit only, e.g. 3420M / 6300M / 16163M.
+disk-size: {{SIZE}}   # integer + binary unit only, e.g. 3420M / 6300M / 16163M.
                       # Decimals or a trailing "B" (e.g. "3.4GB") break `modelctl list-models`
                       # with: strconv.ParseUint: parsing "3.4GB": invalid syntax
 capabilities:

@@ -13,7 +13,7 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 ## Checklist
 
-0. Pre-flight input validation (ADDED — do first; these are cheap and prevent
+0. Pre-flight input validation (do first; these are cheap and prevent
    late build failures):
    - `snap-name` MUST match `^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). A dot,
      underscore, or uppercase is **blocking** — e.g. `qwen3.5` must become
@@ -39,13 +39,12 @@ Validate correctness before build/run by checking metadata integrity, component 
    - Each app has the right interfaces (servers need `network-bind`; the `server`
      daemon typically also has `hardware-observe`, `opengl`, `home`, and
      `process-control`).
-   - `ADDITIONAL_FEATURES` (CHANGED, non-blocking): the reference (`gemma4-snap`)
-     sets `ADDITIONAL_FEATURES: chat, webui` on the **main** app only and omits it
+   - `ADDITIONAL_FEATURES` (non-blocking): on the **main** app only and omits it
      on `server`/`server-webui`. Some CLI versions instead expect `server` to add
      `chat` and `server-webui` to add `webui`. Verify against the CLI version in
      use; treat a mismatch as non-blocking unless feature detection actually fails.
 
-2. Component completeness checks (CHANGED for v2):
+2. Component completeness checks:
    - Each `components/<name>/` dir exists and (after model prep) holds the expected
      GGUF file(s)/shards. There is NO `component.yaml` in v2.
    - No placeholder-only component dirs unless intentionally declared (a README-only
@@ -79,7 +78,7 @@ Validate correctness before build/run by checking metadata integrity, component 
    - `*.gguf` are git-ignored and NOT pushed via git-lfs.
    - A repo-root `download-models.sh` exists (CI invokes `./download-models.sh`).
 
-6. model.yaml consistency checks (CHANGED — replaces old component.yaml section):
+6. model.yaml consistency checks:
    - Text/model entries set `MODEL_NAME` (the `--alias`, API-visible id) and
      `MODEL_FILE`. Multimodal entries also set `MMPROJ_FILE`. `capabilities`
      includes `vision` when an mmproj is shipped.
@@ -89,7 +88,7 @@ Validate correctness before build/run by checking metadata integrity, component 
      single-file component.
    - `MODEL_FILE`/`MMPROJ_FILE`/`SHARDS_DIR` paths resolve at runtime.
 
-7. runtime.yaml consistency checks (CHANGED — replaces old engine `components` list):
+7. runtime.yaml consistency checks:
    - Each `runtime.yaml` declares its server protocol(s) (e.g. `openai` `http`
      `/v1`), the `PATH`/`LD_LIBRARY_PATH` env into `$SNAP_COMPONENTS/<runtime>/…`,
      and a `components:` list referencing the runtime payload component(s) that are
@@ -98,6 +97,10 @@ Validate correctness before build/run by checking metadata integrity, component 
      --model "$MODEL_FILE" --alias "$MODEL_NAME" [--mmproj "$MMPROJ_FILE"] --port …
      --host …`.
    - The model description references the supported silicon and model variant.
+
+8. inference-snaps-cli version checks:
+   - The CLI version used in `snap/snapcraft.yaml` matches the pinned `ref:` in
+     `validate-engines.yaml` (or the CLI version used to generate the workflows).
 
 
 ## Output

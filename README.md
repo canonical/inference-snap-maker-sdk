@@ -25,6 +25,7 @@ Both agents and skills are installed in /home/workshop/.agents directory by the 
 
 - Use the `inference-snaps-template` [repository](https://github.com/canonical/inference-snap-template) to create the new inference snap Github repository.
 - Modify the Makefile to download the desired models.
+- Modify the README.md by compiling the required inputs listed at the top of the file between the `<!--` and `-->` comments.
 
 ### 3. Start a workshop with this SDK
 
