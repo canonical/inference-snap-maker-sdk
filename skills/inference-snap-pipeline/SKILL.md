@@ -37,6 +37,7 @@ It is there to download the models. Subagents will need to use it.
 If any of these are missing, ask before starting the chain. Also prepare a recap and ask for confirmation before starting the chain.
 
 After confirmation modify the README by replacing inputs placeholders with the actual values. Do not modify any other part of the README.
+Make sure that the engines table in the README is updated with the engines required by the user that set them in the commented block at the top of the README.
 
 ## Orchestration rules
 
