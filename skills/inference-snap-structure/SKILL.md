@@ -13,7 +13,7 @@ Create the snap structure by reusing proven patterns from example repositories, 
 
 ## Primary Reference
 
-- `RULESET.md` (sibling file in this skill directory) — the authoritative structural ruleset extracted from the original example repos. Read it before scaffolding. It defines Variant A (single-file model) and Variant B (sharded model > 5 GB) and is self-contained — do NOT consult external example repos.
+- `RULESET.md` (sibling file in this skill directory) — the authoritative structural ruleset extracted from the original example repos. Read it before scaffolding. It defines Variant A (single-file model) and Variant B (split model > 5 GB) and is self-contained — do NOT consult external example repos.
 
 ## Inputs
 
@@ -31,7 +31,7 @@ Create the snap structure by reusing proven patterns from example repositories, 
 
 - File map of copied vs adapted files.
 - Rationale for naming/layout decisions.
-- Sharding decision (required or not) with reason.
+- Model splitting decision (required or not) with reason.
 - Any assumptions and missing inputs.
 
 ## Rules

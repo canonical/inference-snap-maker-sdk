@@ -20,7 +20,7 @@ first and stop-and-report anything missing rather than silently degrading:
 - **Tools:** `snapcraft`, `snapd` active, `make`, `cmake`, `build-essential`,
   `git`, plus smoke-test deps `curl`, `jq`, `ss` (iproute2). Install any missing.
 - **Root:** `--destructive-mode` installs build-packages, so run it under `sudo`.
-- **Disk:** compute the summed size of the model + all shard/runtime components
+- **Disk:** compute the summed size of the model + all model parts/runtime components
   and require that much free space **on the filesystem backing
   `/var/lib/snapd/snaps`** (where `snap install` copies artifacts), not just the
   build dir. A large model can exceed a small container root FS; if so, stop and
@@ -54,7 +54,7 @@ first and stop-and-report anything missing rather than silently degrading:
 The model artifacts are not committed. Before `snapcraft pack`, run the repo's
 model preparation (typically `./download-models.sh`, which may wrap
 `make download-models && make split-model`) so the component payloads exist on
-disk. For sharded models, confirm every shard landed in its component directory
+disk. For split models, confirm every part landed in its component directory
 with the exact filename the `model.yaml` layout expects.
 
 ## Required Workflow

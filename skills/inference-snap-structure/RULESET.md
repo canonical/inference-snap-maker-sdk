@@ -9,17 +9,17 @@ recommended convention; **MAY** = optional.
 
 ## 1. Variant selector (read first)
 
-Choose ONE packaging variant for each model artifact. Makefile download rules determine whether the model is a single file or split into shards. The variant choice affects the snap structure and component layout.
+Choose ONE packaging variant for each model artifact. Makefile download rules determine whether the model is a single file or split into multiple parts. The variant choice affects the snap structure and component layout.
 
 - **Variant A - single component model.**
   One model component contains all model files.
   Use when the component payload is comfortably below Store limits.
 
-- **Variant B - split/sharded model.**
+- **Variant B - split model.**
   Model is split across multiple components because a single component would be
   too large (soft threshold around 5 GB in practice).
   Typical examples:
-  - GGUF shards `...-00001-of-00004.gguf` etc.
+  - GGUF parts `...-00001-of-00004.gguf` etc.
   - OpenVINO/IR split across `...-1-of-2`, `...-2-of-2` components.
 
 Both variants share most structure. Differences are primarily in:
@@ -242,7 +242,7 @@ scripts:
     organize:
       "model-<slug>/*": (component/model-<slug>)
       "mmproj-<slug>/*": (component/mmproj-<slug>)
-      # one line per shard for split models, mapping each shard file to its component
+      # one line per part for split models, mapping each part file to its component
     prime:
       - -*   # exclude everything not explicitly organized
 ```
@@ -299,15 +299,15 @@ Every component payload under `components/` MUST have a matching top-level
 
 All component entries MUST be `type: standard`.
 
-For split/sharded models, use YAML anchors to avoid duplication:
+For split models, use YAML anchors to avoid duplication:
 
 ```yaml
 components:
-  model-{{MODEL_SLUG}}-1-of-{{N_SHARDS}}: &model
+  model-{{MODEL_SLUG}}-1-of-{{N_PARTS}}: &model
     type: standard
     summary: ...
     description: ...
-  model-{{MODEL_SLUG}}-2-of-{{N_SHARDS}}:
+  model-{{MODEL_SLUG}}-2-of-{{N_PARTS}}:
     <<: *model
 ```
 
@@ -646,16 +646,16 @@ environment:
   - MMPROJ_FILE=$SNAP_COMPONENTS/{{MMPROJ_COMPONENT}}/{{MMPROJ_FILE}}   # if multimodal
 ```
 
-For sharded/split models, set an intermediate directory and flatten with layout:
+For split models, set an intermediate directory and flatten with layout:
 
 ```yaml
 environment:
-  - SHARDS_DIR=/tmp/{{MODEL_SLUG}}-shards
-  - MODEL_FILE=$SHARDS_DIR/{{SHARD_1_FILE}}
+  - MODEL_PARTS_DIR=/tmp/{{MODEL_SLUG}}-parts
+  - MODEL_FILE=$MODEL_PARTS_DIR/{{PART_1_FILE}}
   - MODEL_NAME={{MODEL_ALIAS}}
 layout:
-  $SHARDS_DIR/{{SHARD_1_FILE}}:
-    symlink: $SNAP_COMPONENTS/{{COMPONENT_1}}/{{SHARD_1_FILE}}
+  $MODEL_PARTS_DIR/{{PART_1_FILE}}:
+    symlink: $SNAP_COMPONENTS/{{COMPONENT_1}}/{{PART_1_FILE}}
   ...
 ```
 
@@ -727,5 +727,5 @@ Given:
 | `{{ENGINE_NAME}}` | engine directory and `name` | `cpu`, `nvidia-gpu`, `intel-gpu` |
 | `{{PORT}}` | inference HTTP port | `8336` |
 | `{{WEBUI_PORT}}` | webui HTTP port | `8337` |
-| `{{N_SHARDS}}` | number of split artifacts | `4` |
+| `{{N_MODEL_PARTS}}` | number of split artifacts | `4` |
 

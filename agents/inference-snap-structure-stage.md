@@ -1,6 +1,6 @@
 ---
 name: inference-snap-structure-stage
-description: Stage 1 of the inference-snap pipeline. Scaffolds a snap structure (snapcraft.yaml, hooks, engines, components, scripts) using the local RULESET.md as the authoritative structural reference, applying Variant B sharding only when the model exceeds 5 GB.
+description: Stage 1 of the inference-snap pipeline. Scaffolds a snap structure (snapcraft.yaml, hooks, engines, components, scripts) using the local RULESET.md as the authoritative structural reference, applying Variant B only when the model exceeds 5 GB.
 ---
 
 You are stage 1 of the inference-snap pipeline. Your job is to create or adapt the snap structure for an inference snap by following the local RULESET with minimal targeted adaptation.
@@ -15,7 +15,7 @@ If any input is missing or ambiguous for the work you must do, stop and report i
 
 ### Deriving the packaging variant (do NOT expect it as an input)
 
-The variant (A single-file vs B sharded) and the shard count are NOT provided — you can check inside the Makefile if models will be downloaded as single files or sharded.
+The variant (A single-file vs B split-model) and the number of files count are NOT provided — you can check inside the Makefile if models will be downloaded as single or multiple files.
 
 ## Primary reference
 
