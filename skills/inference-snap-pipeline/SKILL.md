@@ -24,31 +24,20 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, the inputs passed in the commented
 block at the top of the file (between `<!--` and `-->`) and verify that they are all present and valid. If any are missing or invalid, ask the user to provide them before starting the chain.
 
-Instead assume the following:
+Assume the following:
 - Target workspace path is where the `workshop.yaml` resides, it is the root directory of the inference snap repository
 - The target repository is the `origin remote` of the git repository in the target workspace path. You can verify this with `git remote -v` and parse the `origin` URL.
 
 Before starting the chain, make sure that all the previous inputs are available and valid, moreover make sure that there is a valid Makefile in the target workspace path.
-It is there to download (and, for large models, split) the models. Subagents will need to use it.
+It is there to download the models. Subagents will need to use it.
 
 **Validate `snap-name` early.** The snap name MUST match
-`^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). If the input contains a dot, underscore,
-or uppercase (e.g. `qwen3.5`), it is invalid and `snapcraft pack` will fail late.
-Propose the hyphenated form (`qwen3.5` → `qwen3-5`), confirm with the user, and use
-it as the store name + CLI command; keep the original as the friendly display name.
-
-The single model-preparation entrypoint used by both local builds and CI is a
-repo-root **`download-models.sh`** (the CI reusable workflow invokes
-`./download-models.sh`, not `make`). It SHOULD wrap the Makefile
-(`make download-models && make split-model`). If the repo has a Makefile but no
-`download-models.sh`, note that stage 2 must create the wrapper.
-
-Also derive the model artifact URL (the HuggingFace `resolve` URL) from the
-Makefile/README so stage 1 can measure its size and pick the sharding variant.
+`^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). If the input contains a dot, underscore, or uppercase (e.g. `qwen3.5`), it is invalid and `snapcraft pack` will fail late. Propose the hyphenated form (`qwen3.5` → `qwen3-5`), confirm with the user, and use it as the store name + CLI command; keep the original as the friendly display name.
 
 If any of these are missing, ask before starting the chain. Also prepare a recap and ask for confirmation before starting the chain.
 
 After confirmation modify the README by replacing inputs placeholders with the actual values. Do not modify any other part of the README.
+Make sure that the engines table in the README is updated with the engines required by the user that set them in the commented block at the top of the README.
 
 ## Orchestration rules
 
@@ -57,7 +46,6 @@ After confirmation modify the README by replacing inputs placeholders with the a
   - Stage 2: `inference-snap-github-workflows-stage` (agent file: `agents/inference-snap-github-workflows-stage.md`)
   - Stage 3: `inference-snap-static-checks-stage` (agent file: `agents/inference-snap-static-checks-stage.md`)
   - Stage 4: `inference-snap-build-and-test-stage` (agent file: `agents/inference-snap-build-and-test-stage.md`)
-- These `subagent_type`s must be registered in the opencode config (e.g. `opencode.jsonc`) for the `Task` tool to accept them. As shipped, `~/.config/opencode/opencode.jsonc` does NOT register them, so the `Task` tool rejects them with `Unknown agent type: … is not a valid agent type`. Register them (see the sample `opencode.jsonc` that maps each `subagent_type` to its `agents/*.md` via `prompt: {file:…}`); until that is done, the inline-execution path below is the normal path, not an exception. If the runtime rejects them as unknown agent types, do NOT fall back to `general-purpose`: instead execute each stage **inline yourself**, following the corresponding agent `.md` as your system prompt and its skill/RULESET as the reference, still producing the stage's `pipeline-report` block before moving on. Surface that you are running inline so the behavior is transparent.
 - Launch stages one at a time. Wait for stage N to return (or complete inline) before launching stage N+1.
 - Each subagent prompt MUST be self-contained — the subagent has no view of this conversation. Always include:
   1. The user's original request (verbatim).
@@ -86,8 +74,6 @@ Previous stage report:
 
 ## Abort conditions
 
-- Stage 3 reports any blocking issue → STOP. Surface the fix list and ask the user whether to fix and rerun stage 3, or abort.
-- Stage 4 reports a failed prompt/API check or build failure → STOP. Surface the failing step + command output verbatim.
 - Subagent returns without a `pipeline-report` block → STOP and ask the user how to proceed; do not fabricate the missing report.
 
 ## Final output to user
@@ -98,6 +84,5 @@ Previous stage report:
 
 ## Rules
 
-- Do NOT skip stages, even if the user seems to imply only the last is needed — earlier stages produce the inputs the later ones rely on.
 - Do NOT run stages in parallel.
 - Do NOT declare the pipeline successful unless stage 4 reports a successful smoke test run.

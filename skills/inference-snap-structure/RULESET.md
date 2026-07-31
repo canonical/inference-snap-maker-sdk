@@ -1,53 +1,26 @@
-# Inference Snap Structure RULESET (v2, gemma4-aligned)
+# Inference Snap Structure RULESET
 
-This ruleset is self-sufficient. Given a user request like
-"snap up model X with HTTP port P and WebUI port Q" plus the substitution
-table at the end, an agent MUST be able to scaffold a Canonical inference snap
-without external examples.
+This ruleset is self-sufficient. Given a user request an agent MUST be able to scaffold a Canonical inference snap without external examples.
 
 Terminology: **MUST** = required for build/runtime correctness; **SHOULD** =
 recommended convention; **MAY** = optional.
-
-This ruleset is aligned to the v2 layout used by `canonical/gemma4-snap`:
-- model metadata is in `models/*/model.yaml`
-- runtime metadata is in `runtimes/*/runtime.yaml`
-- engines select `runtime` + `model`, not explicit component lists
 
 ---
 
 ## 1. Variant selector (read first)
 
-Choose ONE packaging variant for each model artifact set:
+Choose ONE packaging variant for each model artifact. Makefile download rules determine whether the model is a single file or split into multiple parts. The variant choice affects the snap structure and component layout.
 
 - **Variant A - single component model.**
   One model component contains all model files.
   Use when the component payload is comfortably below Store limits.
 
-- **Variant B - split/sharded model.**
+- **Variant B - split model.**
   Model is split across multiple components because a single component would be
   too large (soft threshold around 5 GB in practice).
   Typical examples:
-  - GGUF shards `...-00001-of-00004.gguf` etc.
+  - GGUF parts `...-00001-of-00004.gguf` etc.
   - OpenVINO/IR split across `...-1-of-2`, `...-2-of-2` components.
-
-### Shard sizing (MUST)
-
-- Each component MUST be **< 5 GB** (hard Store limit per component).
-- First measure the real artifact size (bytes). For a HuggingFace GGUF, use the
-  `x-linked-size` header of a redirect HEAD request
-  (`curl -sIL "$url" | grep -i x-linked-size`); fall back to the final
-  `content-length`.
-- Choose the shard count as `n_shards = ceil(size / 4.8GB)`. The 4.8 GB target
-  leaves margin below 5 GB. Example: an 18.3 GB model needs `ceil(18.3/4.8) = 4`
-  shards (~4.6 GB each); **3 shards would be ~6.1 GB each and is INVALID**.
-- Shards MUST be **valid, independently-parseable GGUF files** produced with
-  `llama-gguf-split --split --split-max-size <N>M`, which yields the
-  `...-00001-of-000NN.gguf` naming. Do **NOT** use a raw byte split
-  (`split -b`): raw fragments are not loadable by llama-server and would require
-  a reassembly step the runtime does not perform.
-- llama-server is pointed at shard 1 only (`MODEL_FILE=...-00001-of-000NN.gguf`);
-  it auto-discovers the remaining shards from the same directory, so `model.yaml`
-  MUST symlink every shard into one common `SHARDS_DIR` (see §8.2).
 
 Both variants share most structure. Differences are primarily in:
 - `parts.local-component-files` organization
@@ -82,9 +55,10 @@ Both variants share most structure. Differences are primarily in:
     server.sh                            # MUST
     server-webui.sh                      # MUST
     completion.bash                      # MUST
-    export-shared-configs.sh             # MAY (only if status/owui slots declared)
   Makefile                               # SHOULD (used to download models)
   README.md                              # SHOULD
+  LICENSE                                # SHOULD (empty file)
+  LICENSE-<snap-name>                    # SHOULD (empty file)
   NOTICE                                 # SHOULD (legal attribution)
   .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf
   .gitmodules                            # MAY (for the `dev/` submodule)
@@ -104,23 +78,43 @@ have executable permission committed (`chmod +x`).
 ```yaml
 name: {{SNAP_NAME}}
 base: core24
-summary: Inference Snap for {{MODEL_DISPLAY_NAME}}
+summary: {{MODEL_DISPLAY_NAME}} inference snap
 description: |
-  ...
+  This is an inference snap that lets you run {{SNAP_NAME}}, <very short description of the model>.
+  
+  Before you start, make sure to have the necessary drivers installed on the host:
+  https://documentation.ubuntu.com/inference-snaps/how-to/install-drivers/
+  
+  **Install:**
+  
+  `sudo snap install {{SNAP_NAME}}`
+  
+  **Get help:**
+  
+  `{{SNAP_NAME}} --help`
+  
+  **Licensing:**
+  
+  The {{MODEL_DISPLAY_NAME}} model is provided by {{MODEL_VENDOR}} under the {{MODEL_LICENSE_NAME}} license.
+
+  The licenses of all bundled software can be found inside the snap at `/snap/{{SNAP_NAME}}/current/usr/share/doc`.
+website: https://documentation.ubuntu.com/inference-snaps
+source-code: {{REMOTE_REPO_URL}}
+issues: https://github.com/canonical/inference-snaps/issues
+
 adopt-info: version
+
 grade: stable
 confinement: strict
 compression: lzo
+
 assumes:
   - snapd2.68
+
 platforms:
   amd64:
   arm64:
 ```
-
-SHOULD include `website`, `source-code`, and `issues` fields. Also
-SHOULD include `title`, `contact`, and `license` — snapcraft's metadata linter
-warns when they are empty.
 
 ### 3.2 Environment
 
@@ -130,13 +124,6 @@ MUST include:
 environment:
   SNAP_COMPONENTS: /snap/$SNAP_INSTANCE_NAME/components/$SNAP_REVISION
   ARCH_TRIPLET: $CRAFT_ARCH_TRIPLET_BUILD_FOR
-```
-
-MAY include content-sharing paths (if matching slots exist):
-
-```yaml
-  STATUS_SHARE: *status-share
-  OWUI_SHARE: *owui-share
 ```
 
 MAY include OpenCL env when Intel/OpenCL runtime is used:
@@ -151,35 +138,9 @@ MUST declare home plug for sideloading:
 
 ```yaml
 plugs:
+  # To allow sideloading models by root
   home:
     read: all
-```
-
-MAY declare content slots (status + Open WebUI integration):
-
-```yaml
-slots:
-  status:
-    interface: content
-    source:
-      read:
-        - &status-share $SNAP_DATA/share/status
-  open-webui:
-    interface: content
-    content: open-webui-config
-    source:
-      read:
-        - &owui-share $SNAP_DATA/share/open-webui
-```
-
-### 3.4 Layout (optional)
-
-WSL workaround MAY be declared:
-
-```yaml
-layout:
-  /usr/lib/wsl:
-    bind: $SNAP_COMMON/usr/lib/wsl
 ```
 
 OpenCL/Intel runtimes MAY additionally declare layout binds for ICD and library
@@ -200,22 +161,78 @@ hooks:
 ### 3.6 Parts - common
 
 MUST include these functional groups:
-- `version` (computed from CLI version + git hash, or equivalent deterministic versioning)
-- `cli` (inference-snaps-cli tarball for amd64 and arm64)
-- `cli-dependencies` (typically includes `pciutils`; add `clinfo` for Intel GPU detection)
-- `webui`
-- `engines`
-- `models`
-- `runtimes`
-- `scripts` (with `jq` stage package)
-- `local-component-files`
-- runtime payload parts (for example `llamacpp`, `llamacpp-cuda`, `llamacpp-rocm`, `openvino-model-server`)
+- `version`
+```yaml
+version:
+  after: [cli]
+  plugin: nil
+  source: . # To regenerate the git hash on every change
+  build-packages:
+    - jq
+    - git
+  override-pull: |
+    # Do nothing. This significantly reduces build time when sourcing large files.
+  override-build: |
+    set -eo pipefail
+    cli_version=$($CRAFT_STAGE/bin/modelctl version --format=json | jq .cli --raw-output)
+    git_hash=$(git -C "$SNAPCRAFT_PROJECT_DIR" describe --always)
+    craftctl set version="${cli_version#v}+${git_hash}"
+```
+- `cli and cli-dependencies`
+```yaml
+cli:
+    source:
+      - on amd64: https://github.com/canonical/inference-snaps-cli/releases/download/{{LAST_RELEASE_TAG}}/inference-snaps-cli-linux-amd64.tar.xz
+      - on arm64: https://github.com/canonical/inference-snaps-cli/releases/download/{{LAST_RELEASE_TAG}}/inference-snaps-cli-linux-arm64.tar.xz
+    plugin: dump
+    override-build: |
 
-`local-component-files` SHOULD use `plugin: cmake` with an `override-build` copy
-workaround to avoid unwanted `dump` behavior for very large payloads, and MUST
-end with `prime: [-*]` so unorganized component sources do not leak into the base
-snap. ADDED — canonical shape (from gemma4-snap):
+      # For tab completion
+      ln --symbolic ./modelctl bin/{{SNAP_NAME}}
 
+      craftctl default
+    
+  cli-dependencies:
+    plugin: nil
+    stage-packages:
+      - pciutils # lspci
+```
+- `webui` and`engines` and `models` and `runtimes` and `scripts`:
+```yaml
+webui:
+  plugin: dump
+  source: https://github.com/canonical/inference-snaps-webui/releases/download/v1.1.0/inference-snaps-webui.tar.xz
+  organize:
+    "*": webui/
+
+engines:
+  source: engines
+  plugin: dump
+  organize:
+    "*": engines/
+
+models:
+  source: models
+  plugin: dump
+  organize:
+    "*": models/
+
+runtimes:
+  source: runtimes
+  plugin: dump
+  organize:
+    "*": runtimes/
+
+scripts:
+  source: scripts
+  plugin: dump
+  stage-packages:
+    - jq
+  organize:
+    "server.sh": bin/
+    "server-webui.sh": bin/
+```
+- `local-component-files` SHOULD use `plugin: cmake` with an `override-build` copy workaround to avoid unwanted `dump` behavior for very large payloads, and MUST end with `prime: [-*]` so unorganized component sources do not leak into the base snap. ADDED — canonical shape:
 ```yaml
   local-component-files:
     plugin: cmake
@@ -225,11 +242,42 @@ snap. ADDED — canonical shape (from gemma4-snap):
     organize:
       "model-<slug>/*": (component/model-<slug>)
       "mmproj-<slug>/*": (component/mmproj-<slug>)
-      # one line per shard for split models, mapping each shard file to its component
+      # one line per part for split models, mapping each part file to its component
     prime:
       - -*   # exclude everything not explicitly organized
 ```
+- runtime payload parts, here is an example for `llamacpp`, eventually use and adapt it also for other runtimes (for example `llamacpp-cuda`, `llamacpp-rocm`, `openvino-model-server`)
+```yaml
+llamacpp:
+    plugin: dump
+    source:
+      - on amd64: https://github.com/canonical/llama.cpp-builds/releases/download/b9611/llamacpp-amd64.tar.gz
+      - on arm64: https://github.com/canonical/llama.cpp-builds/releases/download/b9611/llamacpp-arm64.tar.gz
+    override-build: |
+      # Move license files to be included in the snap, not the component
+      mkdir -p $CRAFT_PRIME/usr/share/doc/
+      mv licenses $CRAFT_PRIME/usr/share/doc/llama.cpp
 
+      craftctl default
+    stage-packages:
+      - libgomp1
+    organize:
+      # move everything, including the staged packages
+      "*": (component/llamacpp)
+```
+- notice
+```yaml
+  notice:
+    plugin: nil
+    source: NOTICE
+    source-type: file
+    override-build: |
+      license_dir=$CRAFT_PART_INSTALL/usr/share/doc
+      mkdir -p $license_dir
+      cp NOTICE $license_dir/
+      cp $SNAPCRAFT_PROJECT_DIR/LICENSE $license_dir/
+      cp $SNAPCRAFT_PROJECT_DIR/LICENSE-{{SNAP_NAME}} $license_dir/
+```
 NVIDIA detection SHOULD use a minimal `cli-nvidia-smi` part that copies only
 `/usr/bin/nvidia-smi` and related license text.
 
@@ -238,12 +286,8 @@ returns HTTP 200 before use). A literal scaffold with placeholder parts will NOT
 build — use these real sources:
 
 - CLI: `https://github.com/canonical/inference-snaps-cli/releases/download/<CLI_TAG>/inference-snaps-cli-linux-{amd64,arm64}.tar.xz`
-  (ships `bin/modelctl` and `bin/snap-completer.bash`). Symlink the app command
-  to `modelctl` in `override-build`: `ln --symbolic ./modelctl bin/<SNAP_NAME>`.
 - WebUI: `https://github.com/canonical/inference-snaps-webui/releases/download/<WEBUI_TAG>/inference-snaps-webui.tar.xz`, organized into `webui/`.
 - llama.cpp runtimes: `https://github.com/canonical/llama.cpp-builds/releases/download/<LLAMA_BUILD>/llamacpp-{amd64,arm64}[+cuda12.9|+rocm|+onemkl].tar.gz`,
-  each organized into `(component/<runtime>)` with `stage-packages: [libgomp1]`
-  (add `libatomic1` for rocm/onemkl).
 
 The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
 `validate-engines` CI job's checkout `ref`.
@@ -255,15 +299,15 @@ Every component payload under `components/` MUST have a matching top-level
 
 All component entries MUST be `type: standard`.
 
-For split/sharded models, use YAML anchors to avoid duplication:
+For split models, use YAML anchors to avoid duplication:
 
 ```yaml
 components:
-  model-{{MODEL_SLUG}}-1-of-{{N_SHARDS}}: &model
+  model-{{MODEL_SLUG}}-1-of-{{N_PARTS}}: &model
     type: standard
     summary: ...
     description: ...
-  model-{{MODEL_SLUG}}-2-of-{{N_SHARDS}}:
+  model-{{MODEL_SLUG}}-2-of-{{N_PARTS}}:
     <<: *model
 ```
 
@@ -274,13 +318,13 @@ MUST define three apps:
 ```yaml
 apps:
   {{SNAP_NAME}}:
-    command: bin/{{SNAP_NAME}}
-    completer: bin/{{COMPLETER_FILE}}
+    command: bin/modelctl
+    completer: bin/snap-completer.bash
     plugs:
       - hardware-observe
       - opengl
       - network
-      - desktop
+      - desktop # To open the webui in the browser
     environment:
       ADDITIONAL_FEATURES: chat, webui
 
@@ -292,7 +336,7 @@ apps:
       - hardware-observe
       - opengl
       - home
-      # MAY include process-control
+      # MAY include process-control only if a llama.cpp-rocm is present
 
   server-webui:
     command: bin/server-webui.sh
@@ -300,9 +344,6 @@ apps:
     plugs:
       - network-bind
 ```
-
-`{{COMPLETER_FILE}}` MAY be `completion.bash` (repo script) or another file
-shipped by the CLI release (for example `snap-completer.bash`).
 
 ---
 
@@ -319,29 +360,68 @@ MUST:
    - `webui.http.port={{WEBUI_PORT}}`
    - `webui.http.host=127.0.0.1`
    - `verbose=false`
-4. If WSL layout is used, create symlinks for `/usr/lib/wsl/lib` and
-   `/usr/lib/wsl/drivers` via `$SNAP_COMMON`.
-5. Auto-select engine with non-interactive fallback:
+4. Auto-select engine with non-interactive fallback:
 
 ```bash
-modelctl use-engine --auto --assume-yes --fallback=cpu
+modelctl use-engine --auto --components --assume-yes --fallback=cpu
 ```
+Example:
 
-`--components` MAY be added for repos that require component-aware selection.
+```bash
+#!/bin/bash -eu
+
+tag="snap.$SNAP_INSTANCE_NAME.hook.install"
+
+# Redirect stdout to stdout+syslog
+exec 1> >(tee >(logger --tag=$tag))
+# Redirect stderr to stderr+syslog
+exec 2> >(logger --stderr --priority error --tag=$tag)
+
+#
+# Set generic config
+#
+
+modelctl set --package http.port="8352"
+modelctl set --package http.host="127.0.0.1"
+modelctl set --package verbose="false"
+
+# Webui server config
+modelctl set --package webui.http.port="8353"
+modelctl set --package webui.http.host="127.0.0.1"
+
+#
+# Auto select an engine
+#
+
+modelctl use-engine --auto --components --assume-yes --fallback=cpu
+```
 
 ### 4.2 snap/hooks/post-refresh
 
 MUST:
 1. Use same syslog tagging pattern.
-2. Recreate WSL symlinks with `ln -sfn` when layout is used.
-3. Refresh active engine:
+2. Refresh active engine:
 
 ```bash
 modelctl use-engine --fix --assume-yes --fallback=cpu
 ```
+Example:
 
-MUST NOT re-seed package defaults on refresh.
+```bash
+#!/bin/bash -eu
 
+tag="snap.$SNAP_INSTANCE_NAME.hook.post-refresh"
+
+# Redirect stdout to stdout+syslog
+exec 1> >(tee >(logger --tag=$tag))
+# Redirect stderr to stderr+syslog
+exec 2> >(logger --stderr --priority error --tag=$tag)
+
+#
+# Refresh the active engine
+#
+modelctl use-engine --fix --assume-yes --fallback=cpu
+```
 ---
 
 ## 5. Script conventions
@@ -353,12 +433,9 @@ MUST select active engine and execute its server script:
 ```bash
 #!/bin/bash
 set -euo pipefail
-engine="$(modelctl show-engine --format=json | jq -r .name)"
+engine="$(modelctl status --wait-for-components --format=json | jq -r .engine)"
 exec modelctl run -- "$SNAP/engines/$engine/server" "$@"
 ```
-
-If content-sharing slots are used, SHOULD run
-`$SNAP/bin/export-shared-configs.sh` before launching engine.
 
 ### 5.2 scripts/server-webui.sh
 
@@ -367,43 +444,12 @@ MUST obtain host/port from modelctl and run webui service:
 ```bash
 #!/bin/bash
 set -euo pipefail
+
 port="$(modelctl get webui.http.port)"
 host="$(modelctl get webui.http.host)"
-capabilities="{{WEBUI_CAPABILITIES}}"
-exec modelctl serve-webui "$SNAP/webui" --port "$port" --host "$host" --capabilities "$capabilities"
-```
 
-### 5.3 scripts/export-shared-configs.sh (if content slots)
+exec modelctl serve-webui "$SNAP/webui" --port "$port" --host "$host"
 
-MUST write status JSON and OpenAI endpoint descriptor:
-
-```bash
-#!/bin/bash -eu
-status_json=$(modelctl status --format=json --wait-for-components)
-mkdir -p "$STATUS_SHARE"
-echo "$status_json" > "$STATUS_SHARE/status.json"
-rm -f "$OWUI_SHARE/openai.json"
-openai_url=$(echo "$status_json" | jq -r '.endpoints.openai // empty')
-if [ -n "$openai_url" ]; then
-  mkdir -p "$OWUI_SHARE"
-  jq -n --arg base_url "$openai_url" '{"base_url": $base_url}' > "$OWUI_SHARE/openai.json"
-fi
-```
-
-### 5.4 scripts/completion.bash (OPTIONAL — usually NOT needed)
-
-The v2 `inference-snaps-cli` release tarball already ships
-`./bin/snap-completer.bash`. The recommended default is therefore to set the
-app `completer: bin/snap-completer.bash` (as `gemma4-snap` does) and NOT ship a
-repo `scripts/completion.bash` at all.
-
-Only add a repo `scripts/completion.bash` if you deliberately want a custom
-completer. If you do, it is a static source file with this content (it sources
-the CLI's completion output at runtime — do NOT generate it at build time):
-
-```bash
-unset -f _init_completion
-source <($SNAP/bin/modelctl completion bash)
 ```
 
 ---
@@ -434,10 +480,8 @@ engines.
 
 **Multiple model sizes in one snap:** keep ONE engine per backend
 (e.g. `cpu`, `nvidia-gpu`) and list every size in `model.options` with one as
-`model.default`. Encode the size in the *model id/name* (e.g.
-`qwen-3-5-4b-q4-k-xl`, `qwen-3-5-9b-q4-k-m`), NOT in the engine name. This is what
-`gemma4-snap` does (3 sizes under a single `cpu` engine) and it keeps
-`use-engine --fallback=cpu` valid. Do NOT create `cpu-4b`/`cpu-9b` engines.
+`model.default`. Encode the size in the *model id* (e.g.
+`4b-q4-k-xl-gguf`, `9b-q4-k-m-gguf`).
 
 ### 6.2 Devices
 
@@ -454,18 +498,67 @@ For llama.cpp runtimes, canonical server shape:
 
 ```bash
 #!/bin/bash -eu
+
 port="$(modelctl get http.port)"
 host="$(modelctl get http.host)"
 sleep_idle_seconds="$(modelctl get sleep-idle-seconds)"
+
+extra_args=()
+
+verbose="$(modelctl get verbose)"
+if [ "${verbose}" = "true" ]; then
+  extra_args+=(--verbose)
+fi
+
 mmproj_args=()
 if [ -n "${MMPROJ_FILE:-}" ]; then
   mmproj_args=(--mmproj "$MMPROJ_FILE")
 fi
-exec llama-server --model "$MODEL_FILE" --alias "$MODEL_NAME" "${mmproj_args[@]}" --port "$port" --host "$host" --no-warmup --sleep-idle-seconds "$sleep_idle_seconds" "$@"
+
+set -x
+# Adding --no-warmup to skip the model warmup phase during server startup in order to reduce resource usage if not needed.
+exec llama-server \
+  --model "$MODEL_FILE" \
+  --alias "$MODEL_NAME" \
+  "${mmproj_args[@]}" \
+  --port "$port" \
+  --host "$host" \
+  --no-warmup \
+  --sleep-idle-seconds "$sleep_idle_seconds" \
+  "${extra_args[@]}" \
+  "$@"
 ```
 
 For OpenVINO runtimes, server script typically runs `ovms` using `MODEL_PATH`
 and `MODEL_NAME`.
+```bash
+#!/bin/bash -eu
+
+port="$(modelctl get http.port)"
+host="$(modelctl get http.host)"
+
+extra_args=()
+
+verbose="$(modelctl get verbose)"
+if [ "${verbose}" = "true" ]; then
+  extra_args+=(--log_level DEBUG)
+fi
+
+# Set --pipeline_type VLM to work around an issue with the default
+# continuous batching pipeline, VLM_CB
+
+set -x
+ovms \
+    --rest_port "$port" \
+    --rest_bind_address "$host" \
+    --model_name "$MODEL_NAME" \
+    --model_path "$MODEL_PATH" \
+    --pipeline_type VLM \
+    --task text_generation \
+    --target_device GPU \
+    "${extra_args[@]}" \
+    "$@"
+```
 
 ---
 
@@ -489,6 +582,32 @@ components:
 
 Non-llama runtimes MAY declare additional server protocols (for example OVMS
 `tensorflow-serving` `/v1`, `kserve` `/v2`, `openai` `/v3`).
+For example, OpenVINO OVMS runtime may declare multiple protocols:
+
+```yaml
+servers:
+  tensorflow-serving:
+    protocol: http
+    base-path: /v1
+  kserve:
+    protocol: http
+    base-path: /v2
+  openai:
+    protocol: http
+    base-path: /v3
+
+environment:
+  # Add OVMS binaries
+  - PATH=$PATH:$SNAP_COMPONENTS/openvino-model-server/bin
+  # Add staged shared objects
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP_COMPONENTS/openvino-model-server/lib
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP_COMPONENTS/openvino-model-server/usr/lib/$ARCH_TRIPLET
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP_COMPONENTS/openvino-model-server/usr/local/lib
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP/usr/local/lib
+
+components:
+  - openvino-model-server
+```
 
 ---
 
@@ -497,12 +616,12 @@ Non-llama runtimes MAY declare additional server protocols (for example OVMS
 ### 8.1 Required keys
 
 ```yaml
-id: {{MODEL_ID}}
-name: {{MODEL_FAMILY_OR_SIZE}}
+id: {{MODEL_ID}} # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
+name: {{MODEL_FAMILY_OR_SIZE}} #same as id
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
-disk-size: {{SIZE}}   # CHANGED: integer + binary unit only, e.g. 3420M / 6300M / 16163M.
+disk-size: {{SIZE}}   # integer + binary unit only, e.g. 3420M / 6300M / 16163M.
                       # Decimals or a trailing "B" (e.g. "3.4GB") break `modelctl list-models`
                       # with: strconv.ParseUint: parsing "3.4GB": invalid syntax
 capabilities:
@@ -527,16 +646,16 @@ environment:
   - MMPROJ_FILE=$SNAP_COMPONENTS/{{MMPROJ_COMPONENT}}/{{MMPROJ_FILE}}   # if multimodal
 ```
 
-For sharded/split models, set an intermediate directory and flatten with layout:
+For split models, set an intermediate directory and flatten with layout:
 
 ```yaml
 environment:
-  - SHARDS_DIR=/tmp/{{MODEL_SLUG}}-shards
-  - MODEL_FILE=$SHARDS_DIR/{{SHARD_1_FILE}}
+  - MODEL_PARTS_DIR=/tmp/{{MODEL_SLUG}}-parts
+  - MODEL_FILE=$MODEL_PARTS_DIR/{{PART_1_FILE}}
   - MODEL_NAME={{MODEL_ALIAS}}
 layout:
-  $SHARDS_DIR/{{SHARD_1_FILE}}:
-    symlink: $SNAP_COMPONENTS/{{COMPONENT_1}}/{{SHARD_1_FILE}}
+  $MODEL_PARTS_DIR/{{PART_1_FILE}}:
+    symlink: $SNAP_COMPONENTS/{{COMPONENT_1}}/{{PART_1_FILE}}
   ...
 ```
 
@@ -569,13 +688,9 @@ The following names MUST agree exactly:
 | Engine references unknown runtime | Section 9 runtime agreement |
 | Model component missing from top-level components | Sections 3.7 + 9 |
 | Split model cannot load because files live in separate components | Section 8.2 layout flattening |
-| A shard is ≥ 5 GB (Store rejects the component) | Section 1 shard sizing: `n_shards = ceil(size / 4.8GB)` |
-| Shards produced with raw `split -b` are not loadable GGUFs | Section 1 shard sizing: use `llama-gguf-split` |
 | Wrong model id in `/v1/models` | `MODEL_NAME` plus `--alias` in llama server |
 | Auto-selection breaks install path | Section 4 with `--fallback=cpu` |
 | WebUI not reachable | ports seeded in install + `network-bind` on `server-webui` |
-| Content-sharing files missing | Section 5.3 export script |
-
 ---
 
 ## 11. Deterministic scaffolding algorithm
@@ -587,16 +702,14 @@ Given:
 - desired backends (cpu/nvidia/amd/intel/openvino)
 - component size constraints
 
-1. Choose Variant A or B per model payload size.
-2. Create v2 skeleton (`engines/`, `models/`, `runtimes/`, `components/`, `scripts/`, `snap/`).
-3. Generate `snap/snapcraft.yaml` with required parts/apps/components.
-4. Generate hooks with config seeding and engine select/fix commands.
-5. Generate `scripts/server.sh` and `scripts/server-webui.sh`.
-6. Generate each runtime descriptor (`runtime.yaml`).
-7. Generate each model descriptor (`model.yaml`), including layout for split models.
-8. Generate each engine descriptor and matching engine `server` script.
-9. Verify naming agreements from section 9.
-10. Run static checks and fail on any mismatch.
+1. Create skeleton (`engines/`, `models/`, `runtimes/`, `components/`, `scripts/`, `snap/`).
+2. Generate `snap/snapcraft.yaml` with required parts/apps/components.
+3. Generate hooks with config seeding and engine select/fix commands.
+4. Generate each runtime descriptor (`runtime.yaml`).
+5. Generate each model descriptor (`model.yaml`), including layout for split models.
+6. Generate each engine descriptor and matching engine `server` script.
+7. Verify naming agreements from section 9.
+8.  Run static checks and fail on any mismatch.
 
 ---
 
@@ -606,7 +719,7 @@ Given:
 | --- | --- | --- |
 | `{{SNAP_NAME}}` | snap/app name | `gemma4`, `fastcontext-1-0` |
 | `{{MODEL_ID}}` | `models/<id>/` identifier | `e4b-q4-k-m-gguf` |
-| `{{MODEL_ALIAS}}` | runtime model id (API visible) | `gemma4-e4b-q4-k-m` |
+| `{{MODEL_ALIAS}}` | runtime model id (API visible) | `e4b-q4-k-m` |
 | `{{MODEL_FILE}}` | model file basename | `gemma-4-E4B-it-Q4_K_M.gguf` |
 | `{{MMPROJ_FILE}}` | mmproj basename | `mmproj-gemma-4-E4B-it-Q8_0.gguf` |
 | `{{RUNTIME_NAME}}` | runtime descriptor name | `llamacpp`, `openvino-model-server` |
@@ -614,7 +727,5 @@ Given:
 | `{{ENGINE_NAME}}` | engine directory and `name` | `cpu`, `nvidia-gpu`, `intel-gpu` |
 | `{{PORT}}` | inference HTTP port | `8336` |
 | `{{WEBUI_PORT}}` | webui HTTP port | `8337` |
-| `{{WEBUI_CAPABILITIES}}` | webui capability list | `text, text:markdown, vision` |
-| `{{N_SHARDS}}` | number of split artifacts | `4` |
-| `{{COMPLETER_FILE}}` | app completer path basename | `completion.bash` |
+| `{{N_MODEL_PARTS}}` | number of split artifacts | `4` |
 

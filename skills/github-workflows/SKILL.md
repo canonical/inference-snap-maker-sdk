@@ -1,6 +1,6 @@
 ---
 name: github-workflows
-description: Create GitHub Actions workflow files for inference snap repositories based on canonical/gemma4-snap patterns.
+description: Create GitHub Actions workflow files for inference snap repositories.
 trigger: Keywords like "add github workflows", "create CI/CD workflows", "set up github actions", "add workflow files"
 scope: user
 ---
@@ -13,225 +13,150 @@ Create the `.github/workflows/` directory with proven CI/CD workflow files for i
 
 ## Workflow Files
 
-### 1. build-and-test-pr.yaml
+### 1. pr-label.yaml
 
 Triggered on PR labels for building and testing pull requests.
 
 ```yaml
-name: Build+Test PR
+# This workflow is used to build and test pull requests when specific labels are applied.
+# Supported labels: trigger-build, trigger-tests
+name: PR Label
 
 on:
   pull_request:
     types: [ labeled ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
 jobs:
-  remove-build-label:
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: canonical/inference-snaps-dev/.github/workflows/remove-label.yaml@v2
+  build-test:
+    name: ${{ github.event.label.name }}
+    uses: canonical/inference-snaps-dev/.github/workflows/reuse-pr-build-test.yaml@v2
     with:
-      label: ${{ vars.PR_BUILD_TRIGGER_LABEL }}
-
-  remove-test-label:
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: canonical/inference-snaps-dev/.github/workflows/remove-label.yaml@v2
-    with:
-      label: ${{ vars.PR_TEST_TRIGGER_LABEL }}
-
-  build-pre-check:
-    if: ${{ github.event.label.name == vars.PR_TEST_TRIGGER_LABEL }}
-    runs-on: ubuntu-latest
-    outputs:
-      build-success: ${{ steps.build-pre-check.outputs.build-success }}
-    steps:
-      - id: build-pre-check
-        name: Check for existing successful build
-        uses: canonical/inference-snaps-testing/.github/actions/build-pre-check@v1
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          workflow-name: ${{ github.workflow }}
-
-  build-and-publish:
-    needs: [build-pre-check]
-    if: always() && ((github.event.label.name == vars.PR_BUILD_TRIGGER_LABEL) || (github.event.label.name == vars.PR_TEST_TRIGGER_LABEL && needs.build-pre-check.outputs.build-success == 'false'))
-    uses: canonical/inference-snaps-dev/.github/workflows/build-publish-snap.yaml@v2
-    strategy:
-      fail-fast: false
-      matrix:
-        runner:
-          - [ self-hosted, amd64, noble, 2xlarge-extra ]
-          - [ self-hosted, arm64, noble, large-extra ]
-    with:
-      runner: "${{ toJSON(matrix.runner) }}"
-      init-build-script: 'download-models.sh'
-      publish-channel: latest/edge/pr-${{ github.event.pull_request.number }}
+      trigger-label: ${{ github.event.label.name }}
+      pr-number: "${{ github.event.pull_request.number }}"
+      build-runner: |
+        [
+          ["amd64", "large", "noble", "self-hosted"],
+          ["arm64", "noble", "self-hosted"]
+        ]
+      test-jobs-matrix: |
+        [
+          {
+                    "job-queue": "maas-systemtests-amd64",
+                    "provision-data": "distro: noble",
+                    "select-engine": "cpu",
+                    "test-chat-tps": true,
+                    "test-image-prompt": true
+          },
+          {
+                    "job-queue": "anbox-nvidia-amd64",
+                    "provision-data": "distro: noble",
+                    "install-nvidia-driver-version": 595,
+                    "select-engine": "nvidia-gpu",
+                    "test-chat-tps": true,
+                    "expected-tps": 9.4,
+                    "test-image-prompt": true
+          }
+        ]
+      snap-name: {{SNAP_NAME}}
+      testflinger-client-id: ${{ vars.TESTFLINGER_CLIENT_ID }}
     secrets:
       store-credentials: ${{ secrets.STORE_LOGIN_PR }}
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      testflinger-secret-key: ${{ secrets.TESTFLINGER_SECRET_KEY }}
 
-  test:
-    needs: [build-and-publish]
-    if: ${{ always() && github.event.label.name == vars.PR_TEST_TRIGGER_LABEL && (needs.build-and-publish.result == 'success' || needs.build-and-publish.result == 'skipped') }}
-    uses: ./.github/workflows/testflinger-tests.yaml
-    with:
-      snap-channel: latest/edge/pr-${{ github.event.pull_request.number }}
 ```
 
-### 2. build-main.yaml
+### 2. validate-engines.yaml
 
-Triggered on pushes to the main branch.
-
-```yaml
-name: Build main
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build-and-publish:
-    uses: canonical/inference-snaps-dev/.github/workflows/build-publish-snap.yaml@v2
-    strategy:
-      fail-fast: false
-      matrix:
-        runner:
-          - [ self-hosted, amd64, noble, 2xlarge-extra ]
-          - [ self-hosted, arm64, noble, large-extra ]
-    with:
-      runner: "${{ toJSON(matrix.runner) }}"
-      init-build-script: 'download-models.sh'
-      publish-channel: 'latest/edge' # Add track if needed, e.g., 24/latest/edge
-    secrets:
-      store-credentials: ${{ secrets.STORE_LOGIN_MAIN }}
-```
-
-### 3. cla-check.yaml
-
-Checks if the CLA has been signed on pull requests.
 
 ```yaml
-name: cla-check
+# This workflow is used to validate pull requests.
+# It includes the Canonical CLA check and engine validation.
+name: PR Checks
 on: [pull_request]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  cla-check:
+  cla:
     runs-on: ubuntu-slim
     steps:
       - name: Check if CLA signed
         uses: canonical/has-signed-canonical-cla@v2
-```
-
-### 4. testflinger-tests.yaml
-
-Reusable workflow for running Testflinger tests against the snap.
-
-```yaml
-name: Testflinger tests
-
-on:
-  workflow_call:
-    inputs:
-      snap-channel:
-        description: Snap channel to test
-        required: true
-        type: string
-  workflow_dispatch:
-    inputs:
-      snap-channel:
-        description: Snap channel to test
-        required: true
-        type: string
-
-jobs:
-  test-snap:
-    name: ${{ matrix.jobs.select-engine }} engine
-    strategy:
-      fail-fast: false
-      matrix:
-        jobs:
-          - job-queue: maas-systemtests-amd64
-            provision-data: "distro: noble"
-            select-engine: cpu
-            test-chat-tps: true
-            test-image-prompt: true
-
-          - job-queue: anbox-nvidia-amd64
-            provision-data: "distro: noble"
-            install-nvidia-driver-version: 595
-            select-engine: nvidia-gpu
-            test-chat-tps: true
-            expected-tps: 9.4
-            test-image-prompt: true
-
-    uses: canonical/inference-snaps-testing/.github/workflows/test-snap.yaml@v1
-    secrets: inherit
-    with:
-      job-queue: ${{ matrix.jobs.job-queue }}
-      provision-data: ${{ matrix.jobs.provision-data }}
-
-      snap-name: <snap-name>
-      snap-channel: ${{ inputs.snap-channel }}
-
-      install-nvidia-driver-version: ${{ matrix.jobs.install-nvidia-driver-version }}
-      install-intel-npu-driver: ${{ matrix.jobs.install-intel-npu-driver == true }}
-      snap-connections: ${{ matrix.jobs.snap-connections }}
-
-      expected-engine: ${{ matrix.jobs.expected-engine }}
-      select-engine: ${{ matrix.jobs.select-engine }}
-
-      test-chat-tps: ${{ matrix.jobs.test-chat-tps == true }}
-      expected-tps: ${{ matrix.jobs.expected-tps }}
-
-      test-image-prompt: ${{ matrix.jobs.test-image-prompt == true }}
-      devmode: ${{ matrix.jobs.devmode == true }}
-```
-
-### 5. validate-engines.yaml
-
-Validates engine manifests on pull requests.
-
-```yaml
-name: Validate engine manifests
-on: [pull_request]
-
-jobs:
+        
   validate:
     runs-on: [ ubuntu-latest ]
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+        with:
+          # Prevent usage of simulated merge commit of PR
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Checkout inference-snap-cli
-        uses: actions/checkout@v6
+      - name: Checkout inference-snap-cli 
+        uses: actions/checkout@v7
         with:
           repository: canonical/inference-snaps-cli
           path: inference-snaps-cli
-          ref: vXXX # Pin to the SAME inference-snaps-cli version used by the `cli` part in snap/snapcraft.yaml (must be a real tag, not a placeholder)
+          ref: {{ CLI_TAG }}
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version: '1.26.x'
 
-      - name: Run validation
+      - name: Validate engines
         run: |
-          cd inference-snaps-cli/cmd/cli
+          cd inference-snaps-cli/cmd/modelctl
           go run . debug validate-engines ../../../engines/**/*.yaml
+
 ```
 
-### 6. init-build.sh
+### 4. cicd.yaml
 
-Helper script used during builds to prune LFS objects.
+```yaml
+# This workflow is used to build and publish the snap to the store on every push to main.
+name: CICD
 
-```bash
-#!/bin/bash -ex
+on:
+  push:
+    branches:
+      - main
+  
+  workflow_dispatch: # manual trigger 
 
-# Remove LFS object copies to reduce disk usage
-git lfs prune --force
+
+# Keep one CICD run active at a time so publish/test/promote happen in order
+concurrency:
+  group: ${{ github.workflow }}
+  queue: max
+
+jobs:
+  cicd:
+    if: github.repository == 'canonical/{{SNAP_REPOSITORY}}' # do not run on forks
+    uses: canonical/inference-snaps-dev/.github/workflows/reuse-cicd.yaml@v2
+    with:
+      build-runner: |
+        [
+          ["amd64", "large", "noble", "self-hosted"],
+          ["self-hosted", "arm64", "noble"]
+        ]
+      build-init-script: 'download-models.sh'
+      store-track: latest
+      snap-name: {{SNAP_NAME}}
+      smoke-test-engine: cpu
 ```
 
 ## Workflow
@@ -239,29 +164,18 @@ git lfs prune --force
 1. Create `.github/workflows/` directory in the target repository.
 2. Create all workflow files listed above, adapting:
    - `snap-name` in testflinger-tests.yaml to match the target snap name
-   - `init-build-script` in build workflows if a different script is needed
-   - `publish-channel` values if different channels are required
-   - Matrix jobs in testflinger-tests.yaml based on target engines and test infrastructure
-   - In `validate-engines.yaml`, replace `ref: vXXX` with the SAME
+   - In `validate-engines.yaml`, replace `ref: {{ CLI_TAG }}` with the SAME
      `inference-snaps-cli` tag used by the `cli` part in `snap/snapcraft.yaml`
-     (a placeholder ref will make the job fail).
    - Set testflinger capability flags from the model's ACTUAL capabilities:
      `test-image-prompt` only for vision models; drop it (or set false) for
      text-only models. Only set `expected-tps` when you have a real measured
      baseline for that model+engine — do not copy another model's number.
    - Include one testflinger matrix job per engine the snap actually ships
      (e.g. `cpu`, `nvidia-gpu`); keep unrelated example jobs commented out.
-3. Create `init-build.sh` in the workflows directory and make it executable.
 4. Ensure a repo-root model-prep entrypoint exists for CI. The build reusable
-   workflow runs `./download-models.sh` (the value of `init-build-script`), so
+   workflow runs `./download-models.sh`, so
    if the repo only has a Makefile, create a `download-models.sh` wrapper that
    runs `make download-models && make split-model` and make it executable.
-5. Verify that required secrets are configured in the repository:
-   - `STORE_LOGIN_PR` — credentials for publishing PR builds
-   - `STORE_LOGIN_MAIN` — credentials for publishing main branch builds
-6. Verify that required variables are configured in the repository:
-   - `PR_BUILD_TRIGGER_LABEL` — label that triggers PR builds
-   - `PR_TEST_TRIGGER_LABEL` — label that triggers PR tests
 
 ## Output
 
@@ -272,13 +186,11 @@ git lfs prune --force
 ## Rules
 
 - Always create all workflow files unless explicitly told otherwise.
-- Replace `<snap-name>` in testflinger-tests.yaml with the actual snap name.
+- Replace `<snap-name>` with the actual snap name.
 - Pin `validate-engines.yaml`'s `inference-snaps-cli` ref to the same version as
-  the `cli` part in `snap/snapcraft.yaml`; never leave the `vXXX` placeholder.
+  the `cli` part in `snap/snapcraft.yaml`; never leave the placeholder.
 - Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
   measured baselines — do not carry over another model's values.
 - Ensure a repo-root `download-models.sh` exists (wrapping the Makefile) since CI
   invokes `./download-models.sh`; make it executable.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.
-- Keep commented-out matrix entries (e.g., AMD GPU) for reference.
-- Ensure init-build.sh has executable permissions.
