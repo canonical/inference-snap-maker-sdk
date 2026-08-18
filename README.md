@@ -1,4 +1,4 @@
-# Inference Snaps SDK for Workshop
+# Inference Snap Maker SDK for Workshop
 
 This SDK provides inference snap authoring and validation skills for Workshop environments, together with the OpenCode CLI.
 
