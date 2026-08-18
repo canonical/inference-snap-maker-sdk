@@ -1,4 +1,4 @@
-name: inference-snaps-sdk
+name: inference-snap-maker
 adopt-info: version
 title: Inference Snap Tooling SDK
 summary: LLM skills for inference snap packaging plus OpenCode CLI.
