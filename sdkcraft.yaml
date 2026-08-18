@@ -3,7 +3,7 @@ adopt-info: version
 title: Inference Snap Maker SDK
 summary: AI-driven packaging of LLMs as inference snaps
 description: |
- Use this SDK in a workshop to create inference snaps using OpenCode and LLMs.
+  Use this SDK in a workshop to create inference snaps using OpenCode and LLMs.
 
 build-base: ubuntu@26.04
 platforms:
