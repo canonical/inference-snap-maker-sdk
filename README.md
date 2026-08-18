@@ -51,7 +51,3 @@ In the OpenCode TUI, run:
 ```
 start snap packaging pipeline
 ```
-
-## License and copyright
-
-TODO
