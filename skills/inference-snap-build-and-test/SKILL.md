@@ -52,8 +52,7 @@ first and stop-and-report anything missing rather than silently degrading:
 ## Model preparation (before packing)
 
 The model artifacts are not committed. Before `snapcraft pack`, run the repo's
-model preparation (typically `./download-models.sh`, which may wrap
-`make download-models && make split-model`) so the component payloads exist on
+model preparation (typically `make download-models`) so the component payloads exist on
 disk. For split models, confirm every part landed in its component directory
 with the exact filename the `model.yaml` layout expects.
 

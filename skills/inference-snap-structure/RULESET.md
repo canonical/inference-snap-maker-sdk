@@ -35,6 +35,8 @@ Both variants share most structure. Differences are primarily in:
 <repo-root>/
   snap/
     snapcraft.yaml                       # MUST
+    gui/
+      icon-256.png                       # MAY (referenced by top-level `icon:`)
     hooks/
       install                            # MUST, executable
       post-refresh                       # MUST, executable
@@ -60,7 +62,7 @@ Both variants share most structure. Differences are primarily in:
   LICENSE                                # SHOULD (empty file)
   LICENSE-<snap-name>                    # SHOULD (empty file)
   NOTICE                                 # SHOULD (legal attribution)
-  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf
+  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf components/ .craft/ .snapd-relocate/
   .gitmodules                            # MAY (for the `dev/` submodule)
   .gitattributes                         # SHOULD if using Git LFS: components/model*/*.gguf filter=lfs diff=lfs merge=lfs -text
   renovate.json                          # MAY
@@ -75,35 +77,54 @@ have executable permission committed (`chmod +x`).
 
 ### 3.1 Top-level fields
 
+`{{SNAP_TITLE}}` is the friendly display name from the README `snap-title` frontmatter.
+The `summary`/`description` body MUST mirror the completed template README:
+one bullet per shipped engine, and `**Run:**` uses the bare command (no `--help`).
+
 ```yaml
 name: {{SNAP_NAME}}
-base: core24
-summary: {{MODEL_DISPLAY_NAME}} inference snap
+title: {{SNAP_TITLE}}
+summary: Local AI with {{SNAP_TITLE}} inference snap
 description: |
-  This is an inference snap that lets you run {{SNAP_NAME}}, <very short description of the model>.
-  
-  Before you start, make sure to have the necessary drivers installed on the host:
-  https://documentation.ubuntu.com/inference-snaps/how-to/install-drivers/
-  
-  **Install:**
-  
-  `sudo snap install {{SNAP_NAME}}`
-  
-  **Get help:**
-  
-  `{{SNAP_NAME}} --help`
-  
-  **Licensing:**
-  
-  The {{MODEL_DISPLAY_NAME}} model is provided by {{MODEL_VENDOR}} under the {{MODEL_LICENSE_NAME}} license.
+  {{MODEL_DESCRIPTION}}
 
-  The licenses of all bundled software can be found inside the snap at `/snap/{{SNAP_NAME}}/current/usr/share/doc`.
+  Use this snap to quickly install an optimized environment for local inference with {{SNAP_TITLE}}.
+
+  The snap includes the following hardware-optimized inference engines:
+
+  * cpu: Optimized for x64 and ARM (armv8, armv9) CPUs
+  * nvidia-gpu: CUDA-enabled GPU acceleration
+  # one bullet per engine the snap actually ships, matching the README
+
+  The most suitable engine is automatically selected based on the available hardware.
+
+  **Install:**
+
+  `sudo snap install {{SNAP_NAME}}`
+
+  **Run:**
+
+  `{{SNAP_NAME}}`
+
+  Some accelerators require extra drivers to be usable with this snap:
+  https://documentation.ubuntu.com/inference-snaps/how-to/setup/drivers/
+
+  **License:**
+
+  The {{SNAP_TITLE}} model is provided by {{MODEL_VENDOR}} under the {{MODEL_LICENSE_NAME}} license:
+  {{MODEL_LICENSE_URL}}
+
+  The licenses of all the bundled software can be found after installing the snap at
+  `/snap/{{SNAP_NAME}}/current/usr/share/doc`.
+
+icon: snap/gui/icon-256.png   # only include when the icon file exists; omit otherwise or the build fails
 website: https://documentation.ubuntu.com/inference-snaps
 source-code: {{REMOTE_REPO_URL}}
 issues: https://github.com/canonical/inference-snaps/issues
 
 adopt-info: version
 
+base: core24
 grade: stable
 confinement: strict
 compression: lzo

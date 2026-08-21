@@ -153,7 +153,6 @@ jobs:
           ["amd64", "large", "noble", "self-hosted"],
           ["self-hosted", "arm64", "noble"]
         ]
-      build-init-script: 'download-models.sh'
       store-track: latest
       snap-name: {{SNAP_NAME}}
       smoke-test-engine: cpu
@@ -172,10 +171,6 @@ jobs:
      baseline for that model+engine — do not copy another model's number.
    - Include one testflinger matrix job per engine the snap actually ships
      (e.g. `cpu`, `nvidia-gpu`); keep unrelated example jobs commented out.
-4. Ensure a repo-root model-prep entrypoint exists for CI. The build reusable
-   workflow runs `./download-models.sh`, so
-   if the repo only has a Makefile, create a `download-models.sh` wrapper that
-   runs `make download-models && make split-model` and make it executable.
 
 ## Output
 
@@ -191,6 +186,4 @@ jobs:
   the `cli` part in `snap/snapcraft.yaml`; never leave the placeholder.
 - Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
   measured baselines — do not carry over another model's values.
-- Ensure a repo-root `download-models.sh` exists (wrapping the Makefile) since CI
-  invokes `./download-models.sh`; make it executable.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.
