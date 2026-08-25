@@ -21,8 +21,8 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 
 ## Pre-flight (before launching stage 1)
 
-Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, the inputs passed in the commented
-block at the top of the file (between `<!--` and `-->`) and verify that they are all present and valid. If any are missing or invalid, ask the user to provide them before starting the chain.
+Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, the inputs passed in the YAML frontmatter
+block at the top of the file (between the opening and closing `---` markers) and verify that they are all present and valid. The frontmatter exposes `snap-name`, `snap-title`, `model-card`, `http-port`, `webui-http-port`, and `engines`. If any are missing or invalid, ask the user to provide them before starting the chain.
 
 Assume the following:
 - Target workspace path is where the `workshop.yaml` resides, it is the root directory of the inference snap repository
@@ -32,12 +32,12 @@ Before starting the chain, make sure that all the previous inputs are available 
 It is there to download the models. Subagents will need to use it.
 
 **Validate `snap-name` early.** The snap name MUST match
-`^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). If the input contains a dot, underscore, or uppercase (e.g. `qwen3.5`), it is invalid and `snapcraft pack` will fail late. Propose the hyphenated form (`qwen3.5` → `qwen3-5`), confirm with the user, and use it as the store name + CLI command; keep the original as the friendly display name.
+`^[a-z0-9]+(-[a-z0-9]+)*$` (snapd rule). If the input contains a dot, underscore, or uppercase (e.g. `qwen3.5`), it is invalid and `snapcraft pack` will fail late. Propose the hyphenated form (`qwen3.5` → `qwen3-5`), confirm with the user, and use it as the store name + CLI command; keep the original as the `snap-title` display name.
 
 If any of these are missing, ask before starting the chain. Also prepare a recap and ask for confirmation before starting the chain.
 
-After confirmation modify the README by replacing inputs placeholders with the actual values. Do not modify any other part of the README.
-Make sure that the engines table in the README is updated with the engines required by the user that set them in the commented block at the top of the README.
+After confirmation modify the README by replacing the `{...}` placeholders with the actual values. Do not modify any other part of the README.
+Make sure that the engines list in the README is updated with the engines required by the user that set them in the frontmatter at the top of the README.
 
 ## Orchestration rules
 

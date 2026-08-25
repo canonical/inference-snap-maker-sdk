@@ -12,7 +12,7 @@
       }
     },
     "inference-snap-github-workflows-stage": {
-      "description": "Stage 2 of the inference-snap pipeline: create .github/workflows and the repo-root download-models.sh CI entrypoint.",
+      "description": "Stage 2 of the inference-snap pipeline: create .github/workflows .",
       "mode": "subagent",
       "prompt": "{file:./../../.agents/agents/inference-snap-github-workflows-stage.md}",
       "tools": {

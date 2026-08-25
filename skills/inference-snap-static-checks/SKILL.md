@@ -70,13 +70,12 @@ Validate correctness before build/run by checking metadata integrity, component 
      and its `use-engine --fallback=<engine>` names a real `engines/<engine>/`
      (ADDED: a dangling fallback such as `--fallback=cpu` with only `cpu-4b`/
      `cpu-9b` engines is **blocking**).
-   - The `Makefile`/`download-models.sh` downloads the right files to the exact
+   - The `Makefile` downloads the right files to the exact
      `components/<name>/` dirs with the exact filenames referenced by
      `model.yaml` `MODEL_FILE`/`MMPROJ_FILE` and by the snapcraft `organize` map.
      For split models each part lands in its own component dir with the
      `...-000NN-of-000MM.gguf` name llama-server expects.
    - `*.gguf` are git-ignored and NOT pushed via git-lfs.
-   - A repo-root `download-models.sh` exists (CI invokes `./download-models.sh`).
 
 6. model.yaml consistency checks:
    - Text/model entries set `MODEL_NAME` (the `--alias`, API-visible id) and
