@@ -1,9 +1,9 @@
-name: inference-snaps-sdk
+name: inference-snap-maker
 adopt-info: version
-title: Inference Snap Tooling SDK
-summary: LLM skills for inference snap packaging plus OpenCode CLI.
+title: Inference Snap Maker SDK
+summary: AI-driven packaging of LLMs as inference snaps
 description: |
-  Provides skills to be used by an LLM to package inference snaps and install the OpenCode CLI.
+  Use this SDK in a workshop to create inference snaps using OpenCode and LLMs.
 
 build-base: ubuntu@26.04
 platforms:
@@ -24,3 +24,8 @@ parts:
     source: agents/
     organize:
       "*": agents/
+  opencode-config:
+    plugin: dump
+    source: opencode/
+    organize:
+      "*": opencode/

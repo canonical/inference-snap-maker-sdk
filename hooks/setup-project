@@ -2,8 +2,10 @@
 # Copy skills into user's .agents/skills directory
 SKILLS_DST="/home/workshop/.agents/skills"
 AGENTS_DIR="/home/workshop/.agents/agents"
+OPENCODE_CONFIG_DIR="/home/workshop/.config/opencode/"
 mkdir -p "$SKILLS_DST"
 mkdir -p "$AGENTS_DIR"
+mkdir -p "$OPENCODE_CONFIG_DIR"
 
 shopt -s nullglob
 
@@ -18,3 +20,5 @@ for agent in "$SDK/agents"/*; do
     rm -rf "${AGENTS_DIR:?}/$agent_name"
     cp -r "$agent" "$AGENTS_DIR/$agent_name"
 done
+
+cp -r "$SDK/opencode"/* "$OPENCODE_CONFIG_DIR"
