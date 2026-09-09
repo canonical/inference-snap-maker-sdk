@@ -99,7 +99,7 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 8. inference-snaps-cli version checks:
    - The CLI version used in `snap/snapcraft.yaml` matches the pinned `ref:` in
-     `validate-engines.yaml` (or the CLI version used to generate the workflows).
+     `pr-checks.yaml` (or the CLI version used to generate the workflows).
 
 
 ## Output
