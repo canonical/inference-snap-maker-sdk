@@ -1,6 +1,6 @@
 ---
 name: github-workflows
-description: Create GitHub Actions workflow files for inference snap repositories based on canonical/gemma4-snap patterns.
+description: Create GitHub Actions workflow files for inference snap repositories.
 trigger: Keywords like "add github workflows", "create CI/CD workflows", "set up github actions", "add workflow files"
 scope: user
 ---
@@ -39,5 +39,3 @@ Modify each workflow file in the `.github/workflows/` directory as follows:
 - Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
   measured baselines — do not carry over another model's values.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.
-- Keep commented-out matrix entries (e.g., AMD GPU) for reference.
-- Ensure init-build.sh has executable permissions.
