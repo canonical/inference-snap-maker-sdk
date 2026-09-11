@@ -311,7 +311,7 @@ build — use these real sources:
 - llama.cpp runtimes: `https://github.com/canonical/llama.cpp-builds/releases/download/<LLAMA_BUILD>/llamacpp-{amd64,arm64}[+cuda12.9|+rocm|+onemkl].tar.gz`,
 
 The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
-`validate-engines` CI job's checkout `ref`.
+`pr-checks` CI job's checkout `ref`.
 
 ### 3.7 Components (top-level)
 
