@@ -20,6 +20,7 @@ Create the snap structure by reusing proven patterns from example repositories, 
 1. The target workspace path (where the inference snap repo will be created or adapted)
 2. Whether the target repo already exists (if not, stop and ask the user to create it first)
 3. Ports/hosts to use in hooks and server scripts (from pre-flight)
+4. Presence of the icon file in the template repository directory and its name
 
 ## Workflow
 
