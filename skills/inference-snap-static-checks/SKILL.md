@@ -25,6 +25,7 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 1. snap/snapcraft.yaml checks:
    - Name/summary/description match target model; `name` passes the regex above.
+     Description does not include any information about quantization, model size or number of parameters; README description should also avoid these details.
    - Every component under `components/` is declared in `snapcraft.yaml#components`
      and every declared model/mmproj component has a `components/<name>/` dir.
    - Hooks and scripts referenced by snapcraft actually exist on disk.
