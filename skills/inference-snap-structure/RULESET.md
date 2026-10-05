@@ -81,6 +81,7 @@ have executable permission committed (`chmod +x`).
 The `summary`/`description` body MUST mirror the completed template README:
 one bullet per shipped engine, and `**Run:**` uses the bare command (no `--help`).
 
+If the icon is a local file in the template repository directory, move it to `snap/gui/icon-256.png` and keep the top-level `icon:` field. If it is a URL, download it and place it at `snap/gui/icon-256.png` and keep the top-level `icon:` field. If it is absent, omit both the icon file and the top-level `icon:` field.
 ```yaml
 name: {{SNAP_NAME}}
 title: {{SNAP_TITLE}}
@@ -117,7 +118,7 @@ description: |
   The licenses of all the bundled software can be found after installing the snap at
   `/snap/{{SNAP_NAME}}/current/usr/share/doc`.
 
-icon: snap/gui/icon-256.png   # only include when the icon file exists; the icon is to be found in the template repository directory. If found move it and if necessary rename it
+icon: snap/gui/icon-256.png
 website: https://documentation.ubuntu.com/inference-snaps
 source-code: {{REMOTE_REPO_URL}}
 issues: https://github.com/canonical/inference-snaps/issues

@@ -22,7 +22,7 @@ Orchestrate the specialized inference-snap skills as a sequential chain of subag
 ## Pre-flight (before launching stage 1)
 
 Parse from the `README.md` of the template repository directory where the `workshop.yaml` resides, the inputs passed in the YAML frontmatter
-block at the top of the file (between the opening and closing `---` markers) and verify that they are all present and valid. The frontmatter exposes `snap-name`, `snap-title`, `model-card`, `http-port`, `webui-http-port`, and `engines`. If any are missing or invalid, ask the user to provide them before starting the chain. Also make sure that an `icon.png` file is present in the template repository directory. It is not a mandatory condition for proceeding with the chain, but it is recommended to have it in place. If it is missing, tell the user and ask whether they want to continue without it. Record the icon's presence, its path when present (otherwise `N/A`), and the user's confirmation to continue without it (otherwise `N/A`) in the pre-flight inputs passed to stage 1.
+block at the top of the file (between the opening and closing `---` markers) and verify that they are all present and valid. The frontmatter exposes `snap-name`, `snap-title`, `model-card`, `http-port`, `webui-http-port`, `engines` and `icon`. If any are missing or invalid, ask the user to provide them before starting the chain.
 
 Assume the following:
 - Target workspace path is where the `workshop.yaml` resides, it is the root directory of the inference snap repository
@@ -67,9 +67,7 @@ Pre-flight inputs:
   ports_hosts: {...}
   model_id: {...}
   model_url: {HuggingFace resolve URL of the model artifact}
-  icon_present: {true|false}
-  icon_path: {path to icon.png in the template repository directory, or "N/A"}
-  proceed_without_icon: {user's explicit confirmation if icon_present is false, otherwise "N/A"}
+  icon: {path to icon.png in the template repository directory, link to download the icon, or empty}
 
 Previous stage report:
   {verbatim previous report, or "N/A (first stage)"}
