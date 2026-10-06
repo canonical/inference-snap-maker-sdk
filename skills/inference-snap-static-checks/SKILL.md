@@ -78,9 +78,10 @@ Validate correctness before build/run by checking metadata integrity, component 
    - `*.gguf` are git-ignored and NOT pushed via git-lfs.
 
 6. model.yaml consistency checks:
-   - Text/model entries set `MODEL_NAME` (the `--alias`, API-visible id) and
-     `MODEL_FILE`. Multimodal entries also set `MMPROJ_FILE`. `capabilities`
-     includes `vision` when an mmproj is shipped.
+   - The model `name` equals its `models/<name>/` directory and follows the RULESET
+     model naming (family + version + size, e.g. `qwen3.5-9b`); it is the API-visible
+     id. Entries set `MODEL_FILE`; multimodal entries also set `MMPROJ_FILE`.
+     `capabilities` includes `vision` when an mmproj is shipped.
    - Split models set `MODEL_PARTS_DIR` + `MODEL_FILE=$MODEL_PARTS_DIR/<part-1>` and a
      `layout:` block symlinking every part from its component dir into
      `MODEL_PARTS_DIR` (llama-server auto-discovers the rest). mmproj stays a separate
@@ -93,8 +94,10 @@ Validate correctness before build/run by checking metadata integrity, component 
      and a `components:` list referencing the runtime payload component(s) that are
      declared in `snapcraft.yaml` and built by parts.
    - The engine `server` file is executable and, for llama.cpp, runs `llama-server
-     --model "$MODEL_FILE" --alias "$MODEL_NAME" [--mmproj "$MMPROJ_FILE"] --port …
-     --host …`.
+     --model "$MODEL_FILE" --alias "$model_name" [--mmproj "$MMPROJ_FILE"] --port …
+     --host … --fit-ctx "$min_context_size"`, with `model_name` read from
+     `modelctl model --format=json` and `min_context_size` from
+     `modelctl get min-context-size`.
    - The model description references the supported silicon and model variant.
 
 8. inference-snaps-cli version checks:
