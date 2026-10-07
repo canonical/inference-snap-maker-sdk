@@ -326,11 +326,8 @@ build — use these real sources:
 - WebUI: `https://github.com/canonical/inference-snaps-webui/releases/download/<WEBUI_TAG>/inference-snaps-webui.tar.xz`, organized into `webui/`.
 - llama.cpp runtimes: `https://github.com/canonical/llama.cpp-builds/releases/download/<LLAMA_BUILD>/llamacpp-{amd64,arm64}[+cuda12.9|+rocm|+onemkl].tar.gz`,
 
-`<CLI_TAG>` MUST be the CLI release used by the existing inference snaps
-(currently `v2.0.0-beta.14`), and at least `v2.0.0-beta.14`, which introduced
-`--share-provider`. Do not take an older tag from the template's `pr-checks`
-workflow; update the workflow instead. The same `<CLI_TAG>` MUST be used by the
-`cli` part AND by the `pr-checks` CI job's `lint-package` ref.
+The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
+`pr-checks` CI job's checkout `ref`.
 
 ### 3.7 Components (top-level)
 
