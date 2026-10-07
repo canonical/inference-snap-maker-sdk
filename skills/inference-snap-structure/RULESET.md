@@ -691,11 +691,12 @@ environment:
 `capabilities` SHOULD include applicable values from:
 `text`, `vision`, `thinking`, `tools`, `audio`.
 
-Model naming: the model `name` is shown by `{{SNAP_NAME}} list-models` and is also
+Model naming: the model `name` is shown by `{{SNAP_NAME}} models` and is also
 the model id that API clients see in `/v1/models` (the engine server passes it to
 `llama-server --alias`, section 6.3).
-- `{{MODEL_ID}}` is the model family and version, plus the size, in lowercase:
-  `qwen3.5-9b`, `gemma4-e4b`, `phi4-14b`, `glm-4.7-flash-30b-a3b`.
+- `{{MODEL_ID}}` is the model family and version, the model variant if the upstream
+  name has one, plus the size, in lowercase: `qwen3.5-9b`, `gemma4-e4b`, `phi4-14b`,
+  `glm-4.7-flash-30b-a3b`, `qwen3-coder-30b-a3b`, `qwen2.5-vl-3b`.
 - Add a suffix only to tell apart variants of the same model for other formats or
   hardware: `gemma4-e4b-ov`, `deepseek-r1-7b-ov-npu`, `qwen2.5-vl-3b-aio`.
 - Do NOT use a bare size or quantization such as `9b-q4-k-m-gguf`.
