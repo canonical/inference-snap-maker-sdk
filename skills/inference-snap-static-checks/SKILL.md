@@ -25,14 +25,15 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 1. snap/snapcraft.yaml checks:
    - Name/summary/description match target model; `name` passes the regex above.
-   - Every component under `components/` is declared in `snapcraft.yaml#components`
-     and every declared model/mmproj component has a `components/<name>/` dir.
+   - Every model/mmproj component declared in `snapcraft.yaml#components` is fed by an
+     `organize` entry of the `model-weights` part, and every `model-weights/` directory
+     downloaded by the Makefile is organized into a declared component.
    - Hooks and scripts referenced by snapcraft actually exist on disk.
    - Engine/component naming consistency.
    - Each component name is all lowercase, hyphens only (no underscores/dots).
    - The `organize` step moves files into a correct `(component/<name>)` (or path):
      the component name matches a declared component; for split models there is one
-     organize line per model file. `local-component-files` MUST end with
+     organize line per model file. The `model-weights` part MUST end with
      `prime: [-*]` so unorganized sources don't leak into the base snap.
    - Split models: each part is declared as its own component and organized into
      its own component dir.
@@ -45,7 +46,7 @@ Validate correctness before build/run by checking metadata integrity, component 
      use; treat a mismatch as non-blocking unless feature detection actually fails.
 
 2. Component completeness checks:
-   - Each `components/<name>/` dir exists and (after model prep) holds the expected
+   - Each `model-weights/<dir>/` exists and (after model prep) holds the expected
      GGUF file(s)/part. There is NO `component.yaml`.
    - No placeholder-only component dirs unless intentionally declared (a README-only
      dir is fine pre-download; the artifact must exist before packing).
@@ -70,12 +71,12 @@ Validate correctness before build/run by checking metadata integrity, component 
      and its `use-engine --fallback=<engine>` names a real `engines/<engine>/`
      (ADDED: a dangling fallback such as `--fallback=cpu` with only `cpu-4b`/
      `cpu-9b` engines is **blocking**).
-   - The `Makefile` downloads the right files to the exact
-     `components/<name>/` dirs with the exact filenames referenced by
-     `model.yaml` `MODEL_FILE`/`MMPROJ_FILE` and by the snapcraft `organize` map.
-     For split models each part lands in its own component dir with the
-     `...-000NN-of-000MM.gguf` name llama-server expects.
-   - `*.gguf` are git-ignored and NOT pushed via git-lfs.
+   - The `Makefile` downloads the right files into `model-weights/` with the exact
+     paths and filenames referenced by the snapcraft `organize` map and by
+     `model.yaml` `MODEL_FILE`/`MMPROJ_FILE`. For split models each part keeps the
+     `...-000NN-of-000MM.gguf` name llama-server expects and is organized into its
+     own component.
+   - `model-weights/` and `*.gguf` are git-ignored and NOT pushed via git-lfs.
 
 6. model.yaml consistency checks:
    - The model `name` equals its `models/<name>/` directory and follows the RULESET

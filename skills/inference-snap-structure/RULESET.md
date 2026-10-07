@@ -23,7 +23,7 @@ Choose ONE packaging variant for each model artifact. Makefile download rules de
   - OpenVINO/IR split across `...-1-of-2`, `...-2-of-2` components.
 
 Both variants share most structure. Differences are primarily in:
-- `parts.local-component-files` organization
+- `parts.model-weights` organization
 - top-level `components:` entries
 - `models/*/model.yaml` `layout:` flattening
 
@@ -50,9 +50,10 @@ Both variants share most structure. Differences are primarily in:
   runtimes/
     <runtime-name>/
       runtime.yaml                       # MUST
-  components/
-    <component-name>/                    # MUST, >=1 model and >=1 runtime component
-      <files...>                         # model/runtime payloads
+  model-weights/                         # NOT committed (git-ignored); filled by `make download-models`
+    <dir>/                               # one directory per download (model, model parts, mmproj),
+      <files...>                         # mapped to components by the `model-weights` part's `organize`
+                                         # (runtime components come from their own parts)
   scripts/
     server.sh                            # MUST
     server-webui.sh                      # MUST
@@ -65,13 +66,13 @@ Both variants share most structure. Differences are primarily in:
                                          # if the publisher ships it as another file (e.g. a PDF), include that file instead
                                          # and copy it in the `notice` part
   NOTICE                                 # SHOULD (legal attribution)
-  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf components/ .craft/ .snapd-relocate/
+  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf model-weights/ .craft/ .snapd-relocate/
   .gitmodules                            # MAY (for the `dev/` submodule)
-  .gitattributes                         # SHOULD if using Git LFS: components/model*/*.gguf filter=lfs diff=lfs merge=lfs -text
+  .gitattributes                         # SHOULD if using Git LFS: model-weights/model*/*.gguf filter=lfs diff=lfs merge=lfs -text
   renovate.json                          # MAY
 ```
 
-`server` files (in `engines/<name>/` and `components/<runtime>/`) MUST
+`server` files (in `engines/<name>/`) MUST
 have executable permission committed (`chmod +x`).
 
 ---
@@ -269,11 +270,11 @@ scripts:
     "server.sh": bin/
     "server-webui.sh": bin/
 ```
-- `local-component-files` SHOULD use `plugin: cmake` with an `override-build` copy workaround to avoid unwanted `dump` behavior for very large payloads, and MUST end with `prime: [-*]` so unorganized component sources do not leak into the base snap. ADDED — canonical shape:
+- The `model-weights` part SHOULD use `plugin: cmake` with an `override-build` copy workaround to avoid unwanted `dump` behavior for very large payloads, and MUST end with `prime: [-*]` so unorganized component sources do not leak into the base snap. ADDED — canonical shape:
 ```yaml
-  local-component-files:
+  model-weights:
     plugin: cmake
-    source: components
+    source: model-weights
     override-build: |
       cp -rf --archive --link --no-dereference ${CRAFT_PART_SRC}/* ${CRAFT_PART_INSTALL}
     organize:
@@ -331,7 +332,7 @@ The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
 
 ### 3.7 Components (top-level)
 
-Every component payload under `components/` MUST have a matching top-level
+Every component payload under `model-weights/` MUST have a matching top-level
 `components:` entry in `snapcraft.yaml`.
 
 All component entries MUST be `type: standard`.
@@ -763,7 +764,7 @@ Given:
 - desired backends (cpu/nvidia/amd/intel/openvino)
 - component size constraints
 
-1. Create skeleton (`engines/`, `models/`, `runtimes/`, `components/`, `scripts/`, `snap/`).
+1. Create skeleton (`engines/`, `models/`, `runtimes/`, `scripts/`, `snap/`). `model-weights/` is filled by the Makefile.
 2. Generate `snap/snapcraft.yaml` with required parts/apps/components.
 3. Generate hooks with config seeding and engine select/fix commands.
 4. Generate each runtime descriptor (`runtime.yaml`).
