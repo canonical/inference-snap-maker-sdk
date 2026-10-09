@@ -57,8 +57,6 @@ Both variants share most structure. Differences are primarily in:
   scripts/
     server.sh                            # MUST
     server-webui.sh                      # MUST
-                                         # (no completion script: tab completion comes from
-                                         # bin/snap-completer.bash in the CLI release tarball)
   Makefile                               # SHOULD (used to download models)
   README.md                              # SHOULD
   LICENSE                                # MUST: full GPLv3 text (the license of the snap packaging, same as all inference snaps)
@@ -673,7 +671,7 @@ alias: {{ALIAS}}     # MAY: alternative name accepted by modelctl and unique per
                      # shared name for other formats of the same model (gemma4-e4b-ov -> gemma4-e4b)
                      # or a short name (qwen3.8-27b -> 27b)
 description: {{HUMAN_DESCRIPTION}}
-model-card-url: {{URL}} # SHOULD be the Hugging Face repo of the packaged weights (e.g. the GGUF quantization)
+model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
 disk-size: {{SIZE}}   # integer + binary unit only, e.g. 3420M / 6300M / 16163M.
                       # Decimals or a trailing "B" (e.g. "3.4GB") break `modelctl list-models`
