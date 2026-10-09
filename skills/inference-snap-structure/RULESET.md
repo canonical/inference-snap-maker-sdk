@@ -78,8 +78,10 @@ have executable permission committed (`chmod +x`).
 ### 3.1 Top-level fields
 
 `{{SNAP_TITLE}}` is the friendly display name from the README `snap-title` frontmatter.
-The `summary`/`description` body MUST mirror the completed template README:
+The `{MODEL_DESCRIPTION}` body MUST mirror the completed template README:
 one bullet per shipped engine, and `**Run:**` uses the bare command (no `--help`).
+Always avoid to include information about quantization and model size in both README description and
+metadata description. Make sure that netiher number of parameters nor model size is mentioned anywhere.
 
 ```yaml
 name: {{SNAP_NAME}}
