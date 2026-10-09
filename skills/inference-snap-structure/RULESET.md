@@ -60,9 +60,7 @@ Both variants share most structure. Differences are primarily in:
   Makefile                               # SHOULD (used to download models)
   README.md                              # SHOULD
   LICENSE                                # MUST: full GPLv3 text (the license of the snap packaging, same as all inference snaps)
-  LICENSE-<snap-name>                    # MUST: the model's license (e.g. MIT, Apache 2.0) as published by the model publisher;
-                                         # if the publisher ships it as another file (e.g. a PDF), include that file instead
-                                         # and copy it in the `notice` part
+  LICENSE-<snap-name>                    # SHOULD (empty file)
   NOTICE                                 # SHOULD (legal attribution)
   .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf model-weights/ .craft/ .snapd-relocate/
   .gitmodules                            # MAY (for the `dev/` submodule)
