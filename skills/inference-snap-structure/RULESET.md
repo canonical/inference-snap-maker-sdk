@@ -525,7 +525,7 @@ may reduce the context to. Declaring it in the engine lets users change it with
 **Multiple model sizes in one snap:** keep ONE engine per backend
 (e.g. `cpu`, `nvidia-gpu`) and list every size in `model.options` with one as
 `model.default`. Encode the size in the model name (e.g.
-`qwen3.5-4b`, `qwen3.5-9b`), see section 8.1.
+`4b-q4-k-xl-gguf`, `9b-q4-k-m-gguf`).
 
 ### 6.2 Devices
 
@@ -664,10 +664,9 @@ components:
 ### 8.1 Required keys
 
 ```yaml
-name: {{MODEL_ID}}   # MUST equal the models/<id>/ directory name; there is no `id` key
-alias: {{ALIAS}}     # MAY: alternative name accepted by modelctl and unique per engine, e.g. a
-                     # shared name for other formats of the same model (gemma4-e4b-ov -> gemma4-e4b)
-                     # or a short name (qwen3.8-27b -> 27b)
+name: {{MODEL_ID}}   # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
+                     # MUST equal the models/<id>/ directory name; there is no `id` key
+alias: {{ALIAS}}     # MAY: alternative name accepted by modelctl and unique per engine
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
@@ -688,12 +687,6 @@ environment:
 Model naming: the model `name` is shown by `{{SNAP_NAME}} models` and is also
 the model id that API clients see in `/v1/models` (the engine server passes it to
 `llama-server --alias`, section 6.3).
-- `{{MODEL_ID}}` is the model family and version, the model variant if the upstream
-  name has one, plus the size, in lowercase: `qwen3.5-9b`, `gemma4-e4b`, `phi4-14b`,
-  `glm-4.7-flash-30b-a3b`, `qwen3-coder-30b-a3b`, `qwen2.5-vl-3b`.
-- Add a suffix only to tell apart variants of the same model for other formats or
-  hardware: `gemma4-e4b-ov`, `deepseek-r1-7b-ov-npu`, `qwen2.5-vl-3b-aio`.
-- Do NOT use a bare size or quantization such as `9b-q4-k-m-gguf`.
 
 ### 8.2 Environment conventions
 
@@ -746,7 +739,7 @@ The following names MUST agree exactly:
 | Engine references unknown runtime | Section 9 runtime agreement |
 | Model component missing from top-level components | Sections 3.7 + 9 |
 | Split model cannot load because files live in separate components | Section 8.2 layout flattening |
-| Wrong model id in `/v1/models` | Section 8.1 model naming plus `--alias "$model_name"` in the engine server |
+| Wrong model id in `/v1/models` | Section 8.1 model `name` plus `--alias "$model_name"` in the engine server |
 | Auto-selection breaks install path | Section 4 with `--fallback=cpu` |
 | WebUI not reachable | ports seeded in install + `network-bind` on `server-webui` |
 ---
@@ -776,7 +769,7 @@ Given:
 | Substitution | Meaning | Example |
 | --- | --- | --- |
 | `{{SNAP_NAME}}` | snap/app name | `gemma4`, `fastcontext-1-0` |
-| `{{MODEL_ID}}` | `models/<id>/` directory and model `name` | `gemma4-e4b` |
+| `{{MODEL_ID}}` | `models/<id>/` directory and model `name` | `e4b-q4-k-m-gguf` |
 | `{{MODEL_FILE}}` | model file basename | `gemma-4-E4B-it-Q4_K_M.gguf` |
 | `{{MMPROJ_FILE}}` | mmproj basename | `mmproj-gemma-4-E4B-it-Q8_0.gguf` |
 | `{{RUNTIME_NAME}}` | runtime descriptor name | `llamacpp`, `openvino-model-server` |

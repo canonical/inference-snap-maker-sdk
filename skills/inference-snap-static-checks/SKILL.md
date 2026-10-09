@@ -79,9 +79,7 @@ Validate correctness before build/run by checking metadata integrity, component 
    - `model-weights/` and `*.gguf` are git-ignored and NOT pushed via git-lfs.
 
 6. model.yaml consistency checks:
-   - The model `name` equals its `models/<name>/` directory and follows the RULESET
-     model naming (family + version + variant + size, e.g. `qwen3.5-9b`,
-     `glm-4.7-flash-30b-a3b`); it is the API-visible
+   - The model `name` equals its `models/<name>/` directory; it is the API-visible
      id. Entries set `MODEL_FILE`; multimodal entries also set `MMPROJ_FILE`.
      `capabilities` includes `vision` when an mmproj is shipped.
    - Split models set `MODEL_PARTS_DIR` + `MODEL_FILE=$MODEL_PARTS_DIR/<part-1>` and a
