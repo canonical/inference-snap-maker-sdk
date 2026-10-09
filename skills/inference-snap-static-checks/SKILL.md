@@ -25,14 +25,15 @@ Validate correctness before build/run by checking metadata integrity, component 
 
 1. snap/snapcraft.yaml checks:
    - Name/summary/description match target model; `name` passes the regex above.
-   - Every component under `components/` is declared in `snapcraft.yaml#components`
-     and every declared model/mmproj component has a `components/<name>/` dir.
+   - Every model/mmproj component declared in `snapcraft.yaml#components` is fed by an
+     `organize` entry of the `model-weights` part, and every `model-weights/` directory
+     downloaded by the Makefile is organized into a declared component.
    - Hooks and scripts referenced by snapcraft actually exist on disk.
    - Engine/component naming consistency.
    - Each component name is all lowercase, hyphens only (no underscores/dots).
    - The `organize` step moves files into a correct `(component/<name>)` (or path):
      the component name matches a declared component; for split models there is one
-     organize line per model file. `local-component-files` MUST end with
+     organize line per model file. The `model-weights` part MUST end with
      `prime: [-*]` so unorganized sources don't leak into the base snap.
    - Split models: each part is declared as its own component and organized into
      its own component dir.
@@ -45,7 +46,7 @@ Validate correctness before build/run by checking metadata integrity, component 
      use; treat a mismatch as non-blocking unless feature detection actually fails.
 
 2. Component completeness checks:
-   - Each `components/<name>/` dir exists and (after model prep) holds the expected
+   - Each `model-weights/<dir>/` exists and (after model prep) holds the expected
      GGUF file(s)/part. There is NO `component.yaml`.
    - No placeholder-only component dirs unless intentionally declared (a README-only
      dir is fine pre-download; the artifact must exist before packing).
@@ -70,17 +71,17 @@ Validate correctness before build/run by checking metadata integrity, component 
      and its `use-engine --fallback=<engine>` names a real `engines/<engine>/`
      (ADDED: a dangling fallback such as `--fallback=cpu` with only `cpu-4b`/
      `cpu-9b` engines is **blocking**).
-   - The `Makefile` downloads the right files to the exact
-     `components/<name>/` dirs with the exact filenames referenced by
-     `model.yaml` `MODEL_FILE`/`MMPROJ_FILE` and by the snapcraft `organize` map.
-     For split models each part lands in its own component dir with the
-     `...-000NN-of-000MM.gguf` name llama-server expects.
-   - `*.gguf` are git-ignored and NOT pushed via git-lfs.
+   - The `Makefile` downloads the right files into `model-weights/` with the exact
+     paths and filenames referenced by the snapcraft `organize` map and by
+     `model.yaml` `MODEL_FILE`/`MMPROJ_FILE`. For split models each part keeps the
+     `...-000NN-of-000MM.gguf` name llama-server expects and is organized into its
+     own component.
+   - `model-weights/` and `*.gguf` are git-ignored and NOT pushed via git-lfs.
 
 6. model.yaml consistency checks:
-   - Text/model entries set `MODEL_NAME` (the `--alias`, API-visible id) and
-     `MODEL_FILE`. Multimodal entries also set `MMPROJ_FILE`. `capabilities`
-     includes `vision` when an mmproj is shipped.
+   - The model `name` equals its `models/<name>/` directory; it is the API-visible
+     id. Entries set `MODEL_FILE`; multimodal entries also set `MMPROJ_FILE`.
+     `capabilities` includes `vision` when an mmproj is shipped.
    - Split models set `MODEL_PARTS_DIR` + `MODEL_FILE=$MODEL_PARTS_DIR/<part-1>` and a
      `layout:` block symlinking every part from its component dir into
      `MODEL_PARTS_DIR` (llama-server auto-discovers the rest). mmproj stays a separate
@@ -93,8 +94,10 @@ Validate correctness before build/run by checking metadata integrity, component 
      and a `components:` list referencing the runtime payload component(s) that are
      declared in `snapcraft.yaml` and built by parts.
    - The engine `server` file is executable and, for llama.cpp, runs `llama-server
-     --model "$MODEL_FILE" --alias "$MODEL_NAME" [--mmproj "$MMPROJ_FILE"] --port …
-     --host …`.
+     --model "$MODEL_FILE" --alias "$model_name" [--mmproj "$MMPROJ_FILE"] --port …
+     --host … --fit-ctx "$min_context_size"`, with `model_name` read from
+     `modelctl model --format=json` and `min_context_size` from
+     `modelctl get min-context-size`.
    - The model description references the supported silicon and model variant.
 
 8. inference-snaps-cli version checks:

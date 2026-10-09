@@ -23,7 +23,7 @@ Choose ONE packaging variant for each model artifact. Makefile download rules de
   - OpenVINO/IR split across `...-1-of-2`, `...-2-of-2` components.
 
 Both variants share most structure. Differences are primarily in:
-- `parts.local-component-files` organization
+- `parts.model-weights` organization
 - top-level `components:` entries
 - `models/*/model.yaml` `layout:` flattening
 
@@ -50,25 +50,25 @@ Both variants share most structure. Differences are primarily in:
   runtimes/
     <runtime-name>/
       runtime.yaml                       # MUST
-  components/
-    <component-name>/                    # MUST, >=1 model and >=1 runtime component
-      <files...>                         # model/runtime payloads
+  model-weights/                         # NOT committed (git-ignored); filled by `make download-models`
+    <dir>/                               # one directory per download (model, model parts, mmproj),
+      <files...>                         # mapped to components by the `model-weights` part's `organize`
+                                         # (runtime components come from their own parts)
   scripts/
     server.sh                            # MUST
     server-webui.sh                      # MUST
-    completion.bash                      # MUST
   Makefile                               # SHOULD (used to download models)
   README.md                              # SHOULD
-  LICENSE                                # SHOULD (empty file)
+  LICENSE                                # MUST: full GPLv3 text (the license of the snap packaging, same as all inference snaps)
   LICENSE-<snap-name>                    # SHOULD (empty file)
   NOTICE                                 # SHOULD (legal attribution)
-  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf components/ .craft/ .snapd-relocate/
+  .gitignore                             # SHOULD include: *.snap *.comp parts/ prime/ stage/ *.gguf model-weights/ .craft/ .snapd-relocate/
   .gitmodules                            # MAY (for the `dev/` submodule)
-  .gitattributes                         # SHOULD if using Git LFS: components/model*/*.gguf filter=lfs diff=lfs merge=lfs -text
+  .gitattributes                         # SHOULD if using Git LFS: model-weights/model*/*.gguf filter=lfs diff=lfs merge=lfs -text
   renovate.json                          # MAY
 ```
 
-`server` files (in `engines/<name>/` and `components/<runtime>/`) MUST
+`server` files (in `engines/<name>/`) MUST
 have executable permission committed (`chmod +x`).
 
 ---
@@ -164,6 +164,19 @@ plugs:
     read: all
 ```
 
+MUST declare the provider slot, used by `modelctl run --share-provider` (section 5.1)
+to share the server's connection details with other snaps:
+
+```yaml
+slots:
+  provider:
+    interface: content
+    content: inference-provider
+    source:
+      read:
+        - $SNAP_COMMON/share/provider
+```
+
 OpenCL/Intel runtimes MAY additionally declare layout binds for ICD and library
 paths.
 
@@ -253,11 +266,11 @@ scripts:
     "server.sh": bin/
     "server-webui.sh": bin/
 ```
-- `local-component-files` SHOULD use `plugin: cmake` with an `override-build` copy workaround to avoid unwanted `dump` behavior for very large payloads, and MUST end with `prime: [-*]` so unorganized component sources do not leak into the base snap. ADDED — canonical shape:
+- The `model-weights` part SHOULD use `plugin: cmake` with an `override-build` copy workaround to avoid unwanted `dump` behavior for very large payloads, and MUST end with `prime: [-*]` so unorganized component sources do not leak into the base snap. ADDED — canonical shape:
 ```yaml
-  local-component-files:
+  model-weights:
     plugin: cmake
-    source: components
+    source: model-weights
     override-build: |
       cp -rf --archive --link --no-dereference ${CRAFT_PART_SRC}/* ${CRAFT_PART_INSTALL}
     organize:
@@ -315,7 +328,7 @@ The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
 
 ### 3.7 Components (top-level)
 
-Every component payload under `components/` MUST have a matching top-level
+Every component payload under `model-weights/` MUST have a matching top-level
 `components:` entry in `snapcraft.yaml`.
 
 All component entries MUST be `type: standard`.
@@ -455,7 +468,7 @@ MUST select active engine and execute its server script:
 #!/bin/bash
 set -euo pipefail
 engine="$(modelctl status --wait-for-components --format=json | jq -r .engine)"
-exec modelctl run -- "$SNAP/engines/$engine/server" "$@"
+exec modelctl run --share-provider -- "$SNAP/engines/$engine/server" "$@"
 ```
 
 ### 5.2 scripts/server-webui.sh
@@ -494,14 +507,24 @@ model:
     - ...
 ```
 
-`configurations.sleep-idle-seconds: 600` SHOULD be set for llama.cpp-based
-engines.
+llama.cpp-based engines MUST set:
+
+```yaml
+configurations:
+  sleep-idle-seconds: 600
+  min-context-size: 4096
+```
+
+`min-context-size` is passed to `llama-server --fit-ctx` (section 6.3): the minimum
+context size that llama-server's automatic memory fitting (`--fit`, on by default)
+may reduce the context to. Declaring it in the engine lets users change it with
+`{{SNAP_NAME}} set min-context-size=<n>`.
 
 `experimental: true` MAY be set for non-default experimental engines.
 
 **Multiple model sizes in one snap:** keep ONE engine per backend
 (e.g. `cpu`, `nvidia-gpu`) and list every size in `model.options` with one as
-`model.default`. Encode the size in the *model id* (e.g.
+`model.default`. Encode the size in the model name (e.g.
 `4b-q4-k-xl-gguf`, `9b-q4-k-m-gguf`).
 
 ### 6.2 Devices
@@ -523,6 +546,8 @@ For llama.cpp runtimes, canonical server shape:
 port="$(modelctl get http.port)"
 host="$(modelctl get http.host)"
 sleep_idle_seconds="$(modelctl get sleep-idle-seconds)"
+min_context_size="$(modelctl get min-context-size)"
+model_name="$(modelctl model --format=json | jq -r '.name')"
 
 extra_args=()
 
@@ -540,23 +565,25 @@ set -x
 # Adding --no-warmup to skip the model warmup phase during server startup in order to reduce resource usage if not needed.
 exec llama-server \
   --model "$MODEL_FILE" \
-  --alias "$MODEL_NAME" \
+  --alias "$model_name" \
   "${mmproj_args[@]}" \
   --port "$port" \
   --host "$host" \
   --no-warmup \
   --sleep-idle-seconds "$sleep_idle_seconds" \
+  --fit-ctx "$min_context_size" \
   "${extra_args[@]}" \
   "$@"
 ```
 
 For OpenVINO runtimes, server script typically runs `ovms` using `MODEL_PATH`
-and `MODEL_NAME`.
+and the active model's name.
 ```bash
 #!/bin/bash -eu
 
 port="$(modelctl get http.port)"
 host="$(modelctl get http.host)"
+model_name="$(modelctl model --format=json | jq -r '.name')"
 
 extra_args=()
 
@@ -572,7 +599,7 @@ set -x
 ovms \
     --rest_port "$port" \
     --rest_bind_address "$host" \
-    --model_name "$MODEL_NAME" \
+    --model_name "$model_name" \
     --model_path "$MODEL_PATH" \
     --pipeline_type VLM \
     --task text_generation \
@@ -637,8 +664,9 @@ components:
 ### 8.1 Required keys
 
 ```yaml
-id: {{MODEL_ID}} # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
-name: {{MODEL_FAMILY_OR_SIZE}} #same as id
+name: {{MODEL_ID}}   # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
+                     # MUST equal the models/<id>/ directory name; there is no `id` key
+alias: {{ALIAS}}     # MAY: alternative name accepted by modelctl and unique per engine
 description: {{HUMAN_DESCRIPTION}}
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
@@ -650,11 +678,15 @@ capabilities:
 components:
   - {{MODEL_COMPONENT_1}}
 environment:
-  - MODEL_NAME={{MODEL_ALIAS}}
+  - MODEL_FILE=...   # see section 8.2
 ```
 
 `capabilities` SHOULD include applicable values from:
 `text`, `vision`, `thinking`, `tools`, `audio`.
+
+Model naming: the model `name` is shown by `{{SNAP_NAME}} models` and is also
+the model id that API clients see in `/v1/models` (the engine server passes it to
+`llama-server --alias`, section 6.3).
 
 ### 8.2 Environment conventions
 
@@ -663,7 +695,6 @@ For GGUF single-file model:
 ```yaml
 environment:
   - MODEL_FILE=$SNAP_COMPONENTS/{{MODEL_COMPONENT}}/{{MODEL_FILE}}
-  - MODEL_NAME={{MODEL_ALIAS}}
   - MMPROJ_FILE=$SNAP_COMPONENTS/{{MMPROJ_COMPONENT}}/{{MMPROJ_FILE}}   # if multimodal
 ```
 
@@ -673,7 +704,6 @@ For split models, set an intermediate directory and flatten with layout:
 environment:
   - MODEL_PARTS_DIR=/tmp/{{MODEL_SLUG}}-parts
   - MODEL_FILE=$MODEL_PARTS_DIR/{{PART_1_FILE}}
-  - MODEL_NAME={{MODEL_ALIAS}}
 layout:
   $MODEL_PARTS_DIR/{{PART_1_FILE}}:
     symlink: $SNAP_COMPONENTS/{{COMPONENT_1}}/{{PART_1_FILE}}
@@ -695,7 +725,7 @@ The following names MUST agree exactly:
 - Every component listed in `models/*/model.yaml#components` exists in top-level
   `snapcraft.yaml#components` and is materialized by parts into
   `(component/<name>)`.
-- `MODEL_NAME` in model environment matches expected API model identifier.
+- The model `name` equals its `models/<name>/` directory and is the expected API model identifier.
 - `MODEL_FILE` / `MMPROJ_FILE` / `MODEL_PATH` environment values resolve to
   files or directories that exist at runtime.
 
@@ -709,7 +739,7 @@ The following names MUST agree exactly:
 | Engine references unknown runtime | Section 9 runtime agreement |
 | Model component missing from top-level components | Sections 3.7 + 9 |
 | Split model cannot load because files live in separate components | Section 8.2 layout flattening |
-| Wrong model id in `/v1/models` | `MODEL_NAME` plus `--alias` in llama server |
+| Wrong model id in `/v1/models` | Section 8.1 model `name` plus `--alias "$model_name"` in the engine server |
 | Auto-selection breaks install path | Section 4 with `--fallback=cpu` |
 | WebUI not reachable | ports seeded in install + `network-bind` on `server-webui` |
 ---
@@ -723,7 +753,7 @@ Given:
 - desired backends (cpu/nvidia/amd/intel/openvino)
 - component size constraints
 
-1. Create skeleton (`engines/`, `models/`, `runtimes/`, `components/`, `scripts/`, `snap/`).
+1. Create skeleton (`engines/`, `models/`, `runtimes/`, `scripts/`, `snap/`). `model-weights/` is filled by the Makefile.
 2. Generate `snap/snapcraft.yaml` with required parts/apps/components.
 3. Generate hooks with config seeding and engine select/fix commands.
 4. Generate each runtime descriptor (`runtime.yaml`).
@@ -739,8 +769,7 @@ Given:
 | Substitution | Meaning | Example |
 | --- | --- | --- |
 | `{{SNAP_NAME}}` | snap/app name | `gemma4`, `fastcontext-1-0` |
-| `{{MODEL_ID}}` | `models/<id>/` identifier | `e4b-q4-k-m-gguf` |
-| `{{MODEL_ALIAS}}` | runtime model id (API visible) | `e4b-q4-k-m` |
+| `{{MODEL_ID}}` | `models/<id>/` directory and model `name` | `e4b-q4-k-m-gguf` |
 | `{{MODEL_FILE}}` | model file basename | `gemma-4-E4B-it-Q4_K_M.gguf` |
 | `{{MMPROJ_FILE}}` | mmproj basename | `mmproj-gemma-4-E4B-it-Q8_0.gguf` |
 | `{{RUNTIME_NAME}}` | runtime descriptor name | `llamacpp`, `openvino-model-server` |
