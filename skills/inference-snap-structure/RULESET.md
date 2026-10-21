@@ -470,7 +470,7 @@ MUST select active engine and execute its server script:
 #!/bin/bash
 set -euo pipefail
 engine="$(modelctl status --wait-for-components --format=json | jq -r .engine)"
-exec modelctl run --share-provider -- "$SNAP/engines/$engine/server" "$@"
+exec modelctl run --share-provider --fallback-server -- "$SNAP/engines/$engine/server" "$@"
 ```
 
 ### 5.2 scripts/server-webui.sh
@@ -669,7 +669,7 @@ components:
 name: {{MODEL_ID}}   # something like 4b-q4-k-xl-gguf or 4b-q4-k-xl-ov
                      # MUST equal the models/<id>/ directory name; there is no `id` key
 alias: {{ALIAS}}     # MAY: alternative name accepted by modelctl and unique per engine
-description: {{HUMAN_DESCRIPTION}}
+description: {{HUMAN_DESCRIPTION}} # short human-readable description of the model. Do not add info about quantization size.
 model-card-url: {{URL}}
 quantization: {{QUANT_LABEL}}
 disk-size: {{SIZE}}   # integer + binary unit only, e.g. 3420M / 6300M / 16163M.
