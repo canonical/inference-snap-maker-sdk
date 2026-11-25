@@ -71,6 +71,9 @@ Both variants share most structure. Differences are primarily in:
 `server` files (in `engines/<name>/`) MUST
 have executable permission committed (`chmod +x`).
 
+Do not generate `scripts/completion.bash`; use the completer supplied by the
+CLI artifact instead.
+
 ---
 
 ## 3. snap/snapcraft.yaml shape
@@ -354,7 +357,7 @@ MUST define three apps:
 ```yaml
 apps:
   {{SNAP_NAME}}:
-    command: bin/modelctl
+    command: bin/{{SNAP_NAME}}
     completer: bin/snap-completer.bash
     plugs:
       - hardware-observe
@@ -682,6 +685,9 @@ components:
 environment:
   - MODEL_FILE=...   # see section 8.2
 ```
+
+The model description MUST be concise and omit model size, parameter count,
+model quantization, and mmproj quantization.
 
 `capabilities` SHOULD include applicable values from:
 `text`, `vision`, `thinking`, `tools`, `audio`.

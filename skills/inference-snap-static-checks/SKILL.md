@@ -41,6 +41,9 @@ Validate correctness before build/run by checking metadata integrity, component 
    - Each app has the right interfaces (servers need `network-bind`; the `server`
      daemon typically also has `hardware-observe`, `opengl`, `home`, and
      `process-control`).
+   - The main app uses `bin/<snap-name>`, the CLI part creates that symlink to
+     `modelctl`, and its completer is `bin/snap-completer.bash`. Do not generate
+     `scripts/completion.bash`; the completer comes from the CLI artifact.
    - `ADDITIONAL_FEATURES` (non-blocking): on the **main** app only and omits it
      on `server`/`server-webui`. Some CLI versions instead expect `server` to add
      `chat` and `server-webui` to add `webui`. Verify against the CLI version in
@@ -83,6 +86,8 @@ Validate correctness before build/run by checking metadata integrity, component 
    - The model `name` equals its `models/<name>/` directory; it is the API-visible
      id. Entries set `MODEL_FILE`; multimodal entries also set `MMPROJ_FILE`.
      `capabilities` includes `vision` when an mmproj is shipped.
+   - The model description is concise and omits model size, parameter count,
+     model quantization, and mmproj quantization.
    - Split models set `MODEL_PARTS_DIR` + `MODEL_FILE=$MODEL_PARTS_DIR/<part-1>` and a
      `layout:` block symlinking every part from its component dir into
      `MODEL_PARTS_DIR` (llama-server auto-discovers the rest). mmproj stays a separate
@@ -99,7 +104,8 @@ Validate correctness before build/run by checking metadata integrity, component 
      --host … --fit-ctx "$min_context_size"`, with `model_name` read from
      `modelctl model --format=json` and `min_context_size` from
      `modelctl get min-context-size`.
-   - The model description references the supported silicon and model variant.
+   - The model description references the supported silicon and model variant
+     without including size or quantization details.
 
 8. inference-snaps-cli version checks:
    - The CLI version used in `snap/snapcraft.yaml` matches the pinned `ref:` in
