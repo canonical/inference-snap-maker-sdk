@@ -384,6 +384,19 @@ apps:
       - network-bind
 ```
 
+### 3.9 Lint
+
+MUST place this block at the very end of `snap/snapcraft.yaml`, after all other
+top-level entries:
+
+```yaml
+lint:
+  ignore:
+    - metadata:
+      - license
+      - contact
+```
+
 ---
 
 ## 4. Hook conventions
@@ -472,7 +485,7 @@ MUST select active engine and execute its server script:
 ```bash
 #!/bin/bash
 set -euo pipefail
-engine="$(modelctl status --wait-for-components --format=json | jq -r .engine)"
+engine="$(modelctl engine --format=json | jq -er .name)"
 exec modelctl run --share-provider --fallback-server -- "$SNAP/engines/$engine/server" "$@"
 ```
 
