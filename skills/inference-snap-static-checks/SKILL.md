@@ -101,9 +101,10 @@ Validate correctness before build/run by checking metadata integrity, component 
      `modelctl get min-context-size`.
    - The model description references the supported silicon and model variant.
 
-8. inference-snaps-cli version checks:
-   - The CLI version used in `snap/snapcraft.yaml` matches the pinned `ref:` in
-     `pr-checks.yaml` (or the CLI version used to generate the workflows).
+8. modelctl version checks:
+   - The modelctl version used in `snap/snapcraft.yaml` matches the pinned
+     `canonical/inference-snaps/.github/actions/lint-package` ref in
+     `pr-checks.yaml`.
 
 
 ## Output
