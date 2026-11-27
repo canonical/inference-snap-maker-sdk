@@ -17,8 +17,10 @@ Modify each workflow file in the `.github/workflows/` directory as follows:
   - remove the #TODO comments after you address them
   - substitute `<snap-name>` with the actual snap name
   - substitute `<inference-snap-repository>` with the actual repository name
-  - In `pr-checks.yaml`, make sure that the `lint` job is using the same
-    `inference-snaps-cli` tag used by the `cli` part in `snap/snapcraft.yaml`
+  - In `pr-checks.yaml`, use
+    `canonical/inference-snaps/.github/actions/lint-package@<MODELCTL_TAG>` for
+    the `lint` job, with the same tag as the `modelctl` release URLs in
+    `snap/snapcraft.yaml`
   - Set testflinger capability flags from the model's ACTUAL capabilities:
     `test-image-prompt` only for vision models; drop it (or set false) for
     text-only models. Only set `expected-tps` when you have a real measured
@@ -32,10 +34,8 @@ Modify each workflow file in the `.github/workflows/` directory as follows:
 
 ## Rules
 
-- Replace `<snap-name>` with the actual snap name.
-- Replace `<inference-snap-repository>` with the actual repository name.
-- Pin `pr-checks.yaml`'s `inference-snaps-cli` ref to the same version as
-  the `cli` part in `snap/snapcraft.yaml`; never leave the placeholder.
+- Never leave placeholders like `<snap-name>`, `<inference-snap-repository>` or `<MODELCTL_TAG>` 
+in the final workflow files.
 - Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
   measured baselines — do not carry over another model's values.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.

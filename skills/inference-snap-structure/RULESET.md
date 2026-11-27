@@ -221,8 +221,8 @@ version:
 ```yaml
 cli:
     source:
-      - on amd64: https://github.com/canonical/inference-snaps-cli/releases/download/{{LAST_RELEASE_TAG}}/inference-snaps-cli-linux-amd64.tar.xz
-      - on arm64: https://github.com/canonical/inference-snaps-cli/releases/download/{{LAST_RELEASE_TAG}}/inference-snaps-cli-linux-arm64.tar.xz
+      - on amd64: https://github.com/canonical/inference-snaps/releases/download/{{MODELCTL_TAG}}/modelctl-linux-amd64.tar.xz
+      - on arm64: https://github.com/canonical/inference-snaps/releases/download/{{MODELCTL_TAG}}/modelctl-linux-arm64.tar.xz
     plugin: dump
     override-build: |
 
@@ -320,16 +320,17 @@ llamacpp:
 NVIDIA detection SHOULD use a minimal `cli-nvidia-smi` part that copies only
 `/usr/bin/nvidia-smi` and related license text.
 
-**Runtime & CLI artifact sources** (pin a known-good tag; verify each URL
+**Runtime & modelctl artifact sources** (pin a known-good tag; verify each URL
 returns HTTP 200 before use). A literal scaffold with placeholder parts will NOT
 build — use these real sources:
 
-- CLI: `https://github.com/canonical/inference-snaps-cli/releases/download/<CLI_TAG>/inference-snaps-cli-linux-{amd64,arm64}.tar.xz`
+- modelctl: `https://github.com/canonical/inference-snaps/releases/download/<MODELCTL_TAG>/modelctl-linux-{amd64,arm64}.tar.xz`
 - WebUI: `https://github.com/canonical/inference-snaps-webui/releases/download/<WEBUI_TAG>/inference-snaps-webui.tar.xz`, organized into `webui/`.
 - llama.cpp runtimes: `https://github.com/canonical/llama.cpp-builds/releases/download/<LLAMA_BUILD>/llamacpp-{amd64,arm64}[+cuda12.9|+rocm|+onemkl].tar.gz`,
 
-The same `<CLI_TAG>` MUST be used by the `cli` part AND by the
-`pr-checks` CI job's checkout `ref`.
+The same `<MODELCTL_TAG>` MUST be used by the `cli` part's release URLs and by
+the `canonical/inference-snaps/.github/actions/lint-package` action ref in
+`pr-checks.yaml`.
 
 ### 3.7 Components (top-level)
 
