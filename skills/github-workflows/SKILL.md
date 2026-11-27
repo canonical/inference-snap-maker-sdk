@@ -34,12 +34,8 @@ Modify each workflow file in the `.github/workflows/` directory as follows:
 
 ## Rules
 
-- Replace `<snap-name>` with the actual snap name.
-- Replace `<inference-snap-repository>` with the actual repository name.
-- Pin `pr-checks.yaml`'s
-  `canonical/inference-snaps/.github/actions/lint-package` ref to the same
-  version as the `modelctl` release URLs in `snap/snapcraft.yaml`; never leave
-  the placeholder.
+- Never leave placeholders like `<snap-name>`, `<inference-snap-repository>` or `<MODELCTL_TAG>` 
+in the final workflow files.
 - Set `test-image-prompt`/`expected-tps` from the model's real capabilities and
   measured baselines — do not carry over another model's values.
 - Do not modify reusable workflow references (canonical/inference-snaps-dev, canonical/inference-snaps-testing) without confirmation.
